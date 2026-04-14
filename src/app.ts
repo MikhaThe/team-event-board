@@ -257,8 +257,8 @@ class ExpressApp implements IApp {
 
     // ── Event detail route (Feature 2) ───────────────────────────────
 
-    this.app.get(
-      "/events/:id",
+      this.app.get(
+       "/events/:id",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) {
           return;
