@@ -18,6 +18,8 @@ import {
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
 
+import { showEvent } from "./event/EventController";
+
 type AsyncRequestHandler = RequestHandler;
 
 function asyncHandler(fn: AsyncRequestHandler) {
@@ -240,7 +242,7 @@ class ExpressApp implements IApp {
     // ── Authenticated home page ──────────────────────────────────────
     // TODO: Replace this placeholder with your project's main page.
 
-    this.app.get(
+     this.app.get(
       "/home",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) {
@@ -250,6 +252,19 @@ class ExpressApp implements IApp {
         const browserSession = recordPageView(sessionStore(req));
         this.logger.info(`GET /home for ${browserSession.browserLabel}`);
         res.render("home", { session: browserSession, pageError: null });
+      }),
+    );
+
+    // ── Event detail route (Feature 2) ───────────────────────────────
+
+    this.app.get(
+      "/events/:id",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        await showEvent(req, res);
       }),
     );
 
