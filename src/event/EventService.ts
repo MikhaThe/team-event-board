@@ -7,7 +7,36 @@ export type EventDetailError =
   | { name: "EventNotFound"; message: string }
   | { name: "Forbidden"; message: string }
 
-export class EventService {
+export type EditEventInput = {
+  title?: string
+  description?: string
+  location?: string
+  category?: string
+  startDatetime?: string
+  endDatetime?: string
+}
+
+export interface IEventService {
+  getEventDetail(
+    eventId: string,
+    viewerId?: string,
+    viewerRole?: string,
+  ): Promise<Result<Event, EventDetailError>>
+
+  getFilteredEvents(
+    category?: string,
+    date?: string,
+  ): Promise<Result<Event[], string>>
+
+  editEvent(
+    eventId: string,
+    updates: EditEventInput,
+    viewerId?: string,
+    viewerRole?: string,
+  ): Promise<Result<Event, EventDetailError>>
+}
+
+export class EventService implements IEventService {
   constructor(
     private readonly eventRepository: IEventRepository = InMemoryEventRepository(),
   ) {}
@@ -74,4 +103,61 @@ export class EventService {
 
     return Ok(events)
   }
+
+  async editEvent(
+    eventId: string,
+    updates: EditEventInput,
+    viewerId?: string,
+    viewerRole?: string,
+  ): Promise<Result<Event, EventDetailError>> {
+    const result = await this.eventRepository.findById(eventId)
+
+    if (!result.ok) {
+      return Err({
+        name: "EventNotFound" as const,
+        message: "Event not found.",
+      })
+    }
+
+    const event = result.value
+
+    if (!event) {
+      return Err({
+        name: "EventNotFound" as const,
+        message: "Event not found.",
+      })
+    }
+
+    const isOwner = viewerId === event.organizerId
+    const isAdmin = viewerRole === "admin"
+
+    if (!isOwner && !isAdmin) {
+      return Err({
+        name: "Forbidden" as const,
+        message: "You are not allowed to edit this event.",
+      })
+    }
+
+    const updatedEvent: Event = {
+      ...event,
+      ...updates,
+    }
+
+    const saveResult = await this.eventRepository.save(updatedEvent)
+
+    if (!saveResult.ok) {
+      return Err({
+        name: "Forbidden" as const,
+        message: "Unable to update event.",
+      })
+    }
+
+    return Ok(updatedEvent)
+  }
+}
+
+export function CreateEventService(
+  eventRepository: IEventRepository = InMemoryEventRepository(),
+): IEventService {
+  return new EventService(eventRepository)
 }
