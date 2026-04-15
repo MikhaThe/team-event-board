@@ -17,8 +17,7 @@ import {
   touchAppSession,
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
-
-import { showEvent } from "./event/EventController";
+import { IEventController} from "./event/EventController";
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -36,8 +35,9 @@ class ExpressApp implements IApp {
   private readonly app: express.Express;
 
   constructor(
+    private readonly eventController: IEventController,
     private readonly authController: IAuthController,
-    private readonly logger: ILoggingService,
+    private readonly logger: ILoggingService
   ) {
     this.app = express();
     this.registerMiddleware();
@@ -264,9 +264,33 @@ class ExpressApp implements IApp {
           return;
         }
 
-        await showEvent(req, res);
+        await this.eventController.showEvent(req, res);
       }),
     );
+
+    // ── Event edit route (Feature 3) ───────────────────────────────
+
+      this.app.get(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        await this.eventController.showEditEvent(req, res);
+        }),
+      );
+
+      this.app.post(
+        "/events/:id/edit",
+        asyncHandler(async (req, res) => {
+          if (!this.requireAuthenticated(req, res)) {
+            return;
+          }
+
+          await this.eventController.updateEvent(req, res);
+        }),
+      );
 
     // ── Error handler ────────────────────────────────────────────────
 
@@ -286,8 +310,9 @@ class ExpressApp implements IApp {
 }
 
 export function CreateApp(
+  eventController: IEventController,
   authController: IAuthController,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(authController, logger);
+  return new ExpressApp(eventController, authController, logger);
 }
