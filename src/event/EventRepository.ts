@@ -1,14 +1,4 @@
-type Event = {
-  id: string
-  title: string
-  description: string
-  location: string
-  category: string
-  status: "draft" | "published" | "cancelled" | "past"
-  organizerId: string
-  startDatetime: string
-  endDatetime: string
-}
+import type { Event } from "./Event"
 import type { Result } from "../lib/result"
 
 export interface IEventRepository {
@@ -28,4 +18,8 @@ class EventRepository implements IEventRepository {
     this.events.set(event.id, event)
     return { ok: true, value: undefined }
   }
+}
+
+export function InMemoryEventRepository(): IEventRepository {
+  return new EventRepository()
 }

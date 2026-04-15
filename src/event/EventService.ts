@@ -1,10 +1,7 @@
 import { Err, Ok, type Result } from "../lib/result"
 import { IEventRepository } from "./EventRepository"
 import type { Event } from "./Event"
-
-export type EventDetailError =
-  | { name: "EventNotFound"; message: string }
-  | { name: "Forbidden"; message: string }
+import { EventDetailError } from "../lib/error"
 
 export interface IEventService {
   getEventDetail(
@@ -12,11 +9,13 @@ export interface IEventService {
     viewerId?: string,
     viewerRole?: string,
   ): Promise<Result<Event, EventDetailError>>;
-  saveEditEventDetails(
+  editEvent(
     eventId: string,
+    updates: Partial<Event>,
     viewerId?: string,
     viewerRole?: string
   ): Promise<Result<void, EventDetailError>>;
+  saveEvent(event: Event): Promise<Result<void, string>>;
 }
 
 class EventService implements IEventService{
@@ -58,7 +57,8 @@ class EventService implements IEventService{
     return Ok(event);
   }
 
-  async saveEditEventDetails(eventId: string,
+  async editEvent(eventId: string,updates: 
+    Partial<Event>,
     viewerId?: string,
     viewerRole?: string): Promise<Result<void, EventDetailError>> {
     const eventResult = await this.repository.findById(eventId)
@@ -87,10 +87,39 @@ class EventService implements IEventService{
       })
     }
 
+    if(event.status === "cancelled" || event.status === "past") {
+      return Err({
+        name: "Forbidden" as const,
+        message: "You are not allowed to edit this event.",
+      })
+    }
+
+    const updatesEvent: Event = {
+      ...event,
+      ...updates,
+    }
+
+    const saveResult = await this.repository.save(updatesEvent)
+
+    if (saveResult.ok === false) {  
+      return Err({
+        name: "Forbidden" as const,
+        message: "You are not allowed to edit this event.",
+      })
+    }
+
     return Ok(undefined);
+  }
+
+  async saveEvent(event: Event): Promise<Result<void, string>> {
+    const saveResult = await this.repository.save(event)
+    if (saveResult.ok === false) {
+      return Err("Failed to save event.")
+    }
+    return Ok(undefined)
   }
 }
 
-export function createEventService(repository: IEventRepository): IEventService {
+export function CreateEventService(repository: IEventRepository): IEventService {
   return new EventService(repository);
 }

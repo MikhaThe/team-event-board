@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Result } from "../lib/result";
-import { IEventService, type EventDetailError } from "./EventService";
+import { IEventService } from "./EventService";
+import { EventDetailError } from "../lib/error";
 import { getAuthenticatedUser } from "../session/AppSession";
 import type { Event } from "./Event";
 import { ILoggingService } from "../service/LoggingService";
@@ -8,6 +9,7 @@ import { ILoggingService } from "../service/LoggingService";
 export interface IEventController {
   showEvent(req: Request, res: Response): Promise<void>;
   showEditEvent(req: Request, res: Response): Promise<void>;
+  updateEvent(req: Request, res: Response): Promise<void>;
 }
 
 class EventController implements IEventController {
@@ -27,7 +29,7 @@ class EventController implements IEventController {
     );
 
     if (result.ok === false) {
-      const error: EventDetailError = result.value;
+      const error = result.value;
 
       if (error.name === "EventNotFound") {
         res.status(404).send(error.message);
@@ -54,14 +56,14 @@ class EventController implements IEventController {
     const eventId = req.params.id as string;
     const user = getAuthenticatedUser(req.session);
 
-    const result = await this.service.saveEditEventDetails(
+    const result = await this.service.getEventDetail(
       eventId,
       user?.userId,
       user?.role,
     );
 
-    if (result.ok === false) {
-      const error: EventDetailError = result.value;
+    if (!result.ok) {
+      const error = result.value as EventDetailError;
 
       if (error.name === "EventNotFound") {
         res.status(404).send(error.message);
@@ -78,11 +80,44 @@ class EventController implements IEventController {
     }
 
     res.render("editEvent", {
-      eventId,
+      event: result.value,
     });
+  }
+
+  async updateEvent(req: Request, res: Response): Promise<void> {
+    const eventId = req.params.id as string;
+    const user = getAuthenticatedUser(req.session);
+
+    const updates = req.body;
+
+    const result = await this.service.editEvent(
+      eventId,
+      updates,
+      user?.userId,
+      user?.role
+    );
+
+    if (!result.ok) {
+      const error = result.value as EventDetailError;
+
+      if (error.name === "EventNotFound") {
+        res.status(404).send(error.message);
+        return;
+      }
+
+      if (error.name === "Forbidden") {
+        res.status(403).send(error.message);
+        return;
+      }
+
+      res.status(400).send("Unknown error.");
+      return;
+    }
+
+    res.redirect(`/events/${eventId}`);
   }
 }
 
-export function createEventController(service: IEventService, logger: ILoggingService): IEventController {
+export function CreateEventController(service: IEventService, logger: ILoggingService): IEventController {
   return new EventController(service, logger);
 }
