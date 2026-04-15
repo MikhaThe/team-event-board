@@ -6,6 +6,9 @@ export type Event = {
   category: string
   status: "draft" | "published" | "cancelled" | "past"
   organizerId: string
+  organizerName: string
   startDatetime: string
   endDatetime: string
+  attendeeCount: number
+  capacity?: number
 }
