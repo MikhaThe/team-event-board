@@ -18,6 +18,7 @@ import {
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
 import { IEventController} from "./event/EventController";
+import { listEvents } from "./event/EventListController";
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -252,6 +253,19 @@ class ExpressApp implements IApp {
         const browserSession = recordPageView(sessionStore(req));
         this.logger.info(`GET /home for ${browserSession.browserLabel}`);
         res.render("home", { session: browserSession, pageError: null });
+      }),
+    );
+
+    // ── Event list route (Feature 6) ───────────────────────────────
+
+    this.app.get(
+      "/events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        await listEvents(req, res);
       }),
     );
 
