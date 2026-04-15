@@ -1,38 +1,43 @@
 import type { IRSVPRecord, RSVPStatus } from "./RSVP";
+import  { type Result, Ok, Err} from "../lib/result"
+import { RSVPNotFound, type RSVPError } from "../auth/errors"
 
 
 export interface IRSVPRepository {
-    findByUserAndEvent(userId: string, eventId: string): IRSVPRecord | null;
-    countGoingByEvent(eventId: string): number
-    create(rsvp: IRSVPRecord): IRSVPRecord;
-    updateStatus(userId: string, eventId: string, status: RSVPStatus): IRSVPRecord;
+    findByUserAndEvent(userId: string, eventId: string): Promise<Result<IRSVPRecord | null, RSVPError>>;
+    countGoingByEvent(eventId: string): Promise<Result<number, RSVPError>>
+    create(rsvp: IRSVPRecord): Promise<Result<IRSVPRecord, RSVPError>>;
+    updateStatus(userId: string, eventId: string, status: RSVPStatus): Promise<Result<IRSVPRecord, RSVPError>>;
 }
 
 class RSVPRepository implements IRSVPRepository {
     constructor(private readonly rsvpStore: IRSVPRecord[]) {};
 
-    findByUserAndEvent(userId: string, eventId: string): IRSVPRecord | null {
+    async findByUserAndEvent(userId: string, eventId: string): Promise<Result<IRSVPRecord | null, RSVPError>> {
         const record = this.rsvpStore.find(r => r.userId == userId && r.eventId == eventId) ?? null
-        return record
+        return Ok(record);
     }
 
-    countGoingByEvent(eventId: string): number {
+    async countGoingByEvent(eventId: string): Promise<Result<number, RSVPError>> {
         const count = this.rsvpStore.filter(r => r.eventId === eventId && r.status === "going").length;
-        return count;
+        return Ok(count);
     }
 
-    create(rsvp: IRSVPRecord): IRSVPRecord {
+    async create(rsvp: IRSVPRecord): Promise<Result<IRSVPRecord, RSVPError>> {
         this.rsvpStore.push(rsvp)
-        return rsvp
+        return Ok(rsvp)
     }
 
-    updateStatus(userId: string, eventId: string, status: RSVPStatus): IRSVPRecord {
-        const record = this.findByUserAndEvent(userId, eventId)
+    async updateStatus(userId: string, eventId: string, status: RSVPStatus): Promise<Result<IRSVPRecord, RSVPError>> {
+        const record = await this.findByUserAndEvent(userId, eventId)
 
-        if (record) {
-            record.status = status;
+        if (record.ok == false) {
+            return Err(RSVPNotFound("RSVP could not be found"))
         }
-        return record!
+        if (record.value) {
+            record.value.status = status;
+        }
+        return Ok(record.value!)
     }
 }
 
