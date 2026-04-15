@@ -19,6 +19,7 @@ import {
 import { ILoggingService } from "./service/LoggingService";
 
 import { showEvent } from "./event/EventController";
+import { IRSVPController } from "./rsvp/RSVPController";
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -38,6 +39,7 @@ class ExpressApp implements IApp {
   constructor(
     private readonly authController: IAuthController,
     private readonly logger: ILoggingService,
+    private readonly rsvpController: IRSVPController
   ) {
     this.app = express();
     this.registerMiddleware();
@@ -268,6 +270,20 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // -- RSVP form route (Feature 4)
+      this.app.post("/events/:id/rsvp", asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const eventId = String(req.params.id);
+        const capacity = Number(req.body.capacity);
+        const session = touchAppSession(req.session)
+
+        await this.rsvpController.toggleRSVPFromForm(res, {eventId, capacity}, session);
+      }),
+    );
+
     // ── Error handler ────────────────────────────────────────────────
 
     this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
@@ -288,6 +304,7 @@ class ExpressApp implements IApp {
 export function CreateApp(
   authController: IAuthController,
   logger: ILoggingService,
+  rsvpController: IRSVPController
 ): IApp {
-  return new ExpressApp(authController, logger);
+  return new ExpressApp(authController, logger, rsvpController);
 }
