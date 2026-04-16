@@ -15,12 +15,13 @@ import {
   AppSessionStore,
   recordPageView,
   touchAppSession,
+  IAppBrowserSession,
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
-import type { IEventController } from "./event/EventController";
+import { IEventController } from "./event/EventController";
+import { IEventListController } from "./event/EventListController";
 import { IRSVPController } from "./rsvp/RSVPController";
-import type { IEventController as IOrganizerController } from "./events/EventController";
-import { listEvents } from "./event/EventListController";
+import { IDashboardController } from "./dashboard/DashboardController";
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -39,10 +40,12 @@ class ExpressApp implements IApp {
 
   constructor(
     private readonly eventController: IEventController,
+    private readonly eventlistController: IEventListController,
     private readonly authController: IAuthController,
     private readonly organizerController: IOrganizerController,
     private readonly logger: ILoggingService,
     private readonly rsvpController: IRSVPController,
+    private readonly dashboardController: IDashboardController
   ) {
     this.app = express();
     this.registerMiddleware();
@@ -259,7 +262,7 @@ class ExpressApp implements IApp {
           return;
         }
 
-        await listEvents(req, res);
+        await this.eventlistController.listEvents(req, res);
       }),
     );
 
@@ -335,6 +338,17 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // ── RSVP Dashboard route (Feature 7) ───────────────────────────────
+    this.app.get(
+    "/dashboard",
+    asyncHandler(async (req, res) => {
+      if (!this.requireAuthenticated(req, res)) {
+          return;
+      }
+      await this.dashboardController.getDashboard(req, res);
+    })
+  );
+
     // ── Error handler ────────────────────────────────────────────────
 
     this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
@@ -354,10 +368,12 @@ class ExpressApp implements IApp {
 
 export function CreateApp(
   eventController: IEventController,
+  eventlistController: IEventListController,
   authController: IAuthController,
   organizerController: IOrganizerController,
   logger: ILoggingService,
   rsvpController: IRSVPController,
+  dashboardController: IDashboardController
 ): IApp {
-  return new ExpressApp(eventController, authController, organizerController, logger, rsvpController);
+  return new ExpressApp(eventController, eventlistController, authController, logger, rsvpController, dashboardController);
 }

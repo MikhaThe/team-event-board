@@ -1,32 +1,49 @@
 import { Request, Response } from "express";
-import { EventService } from "./EventService";
+import { IEventService } from "./EventService";
 import {
   touchAppSession,
   type AppSessionStore,
 } from "../session/AppSession";
+import { ILoggingService } from "../service/LoggingService";
 
-const eventService = new EventService();
+export interface IEventListController {
+  listEvents(req: Request, res: Response): Promise<void>;
+}
 
-export async function listEvents(req: Request, res: Response): Promise<void> {
-  const category =
-    typeof req.query.category === "string" ? req.query.category : undefined;
+export class EventListController implements IEventListController {
+  constructor(
+    private eventService: IEventService,
+    private logger: ILoggingService
+  ) {}
 
-  const date =
-    typeof req.query.date === "string" ? req.query.date : undefined;
+  async listEvents(req: Request, res: Response): Promise<void> {
+      const category =
+        typeof req.query.category === "string" ? req.query.category : undefined;
 
-  const result = await eventService.getFilteredEvents(category, date);
+    const date =
+      typeof req.query.date === "string" ? req.query.date : undefined;
 
-  if (!result.ok) {
-    res.status(500).send(result.value);
-    return;
+    const result = await this.eventService.getFilteredEvents(category, date);
+
+    if (!result.ok) {
+      res.status(500).send(result.value);
+      return;
+    }
+
+    const browserSession = touchAppSession(req.session as AppSessionStore);
+
+    res.render("eventList", {
+      events: result.value,
+      selectedCategory: category ?? "",
+      selectedDate: date ?? "",
+      session: browserSession,
+    });
   }
+}
 
-  const browserSession = touchAppSession(req.session as AppSessionStore);
-
-  res.render("eventList", {
-    events: result.value,
-    selectedCategory: category ?? "",
-    selectedDate: date ?? "",
-    session: browserSession,
-  });
+export function CreateEventListController(
+  eventService: IEventService,
+  logger: ILoggingService
+): IEventListController {
+  return new EventListController(eventService, logger);
 }

@@ -10,13 +10,12 @@ import type { ILoggingService } from "./service/LoggingService";
 import { CreateEventController } from "./event/EventController";
 import { CreateEventService } from "./event/EventService";
 import { InMemoryEventRepository } from "./event/EventRepository";
+import { CreateEventListController } from "./event/EventListController";
+import { CreateDashboardController } from "./dashboard/DashboardController";
+import { CreateDashboardService } from "./dashboard/DashboardService";
+import { CreateRSVPController } from "./rsvp/RSVPController";
 import { CreateRSVPService } from "./rsvp/RSVPService";
 import { CreateRSVPRepository } from "./rsvp/RSVPRepository";
-import { RSVPController } from "./rsvp/RSVPController";
-import { CreateInMemoryEventRepository } from "./events/InMemoryEventRepository";
-import { CreateInMemoryRsvpRepository } from "./events/InMemoryRsvpRepository";
-import { CreateEventService as CreateOrganizerEventService } from "./events/EventService";
-import { CreateEventController as CreateOrganizerController } from "./events/EventController";
 
 export function createComposedApp(logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
@@ -32,17 +31,12 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const eventRepository = InMemoryEventRepository();
   const eventService = CreateEventService(eventRepository);
   const eventController = CreateEventController(eventService, resolvedLogger);
-
-  // RSVP wiring (Feature 4)
+  const eventListController = CreateEventListController(eventService, resolvedLogger);
   const rsvpRepository = CreateRSVPRepository();
   const rsvpService = CreateRSVPService(rsvpRepository);
-  const rsvpController = new RSVPController(rsvpService, resolvedLogger);
+  const rsvpController = CreateRSVPController(rsvpService, resolvedLogger);
+  const dashboardService = CreateDashboardService(rsvpRepository, eventRepository);
+  const dashboardController = CreateDashboardController(dashboardService, resolvedLogger);
 
-  // Organizer event wiring (Features 5 & 8)
-  const organizerEventRepo = CreateInMemoryEventRepository();
-  const organizerRsvpRepo = CreateInMemoryRsvpRepository();
-  const organizerEventService = CreateOrganizerEventService(organizerEventRepo, organizerRsvpRepo);
-  const organizerController = CreateOrganizerController(organizerEventService, resolvedLogger);
-
-  return CreateApp(eventController, authController, organizerController, resolvedLogger, rsvpController);
+  return CreateApp(eventController, eventListController, authController, resolvedLogger, rsvpController, dashboardController);
 }
