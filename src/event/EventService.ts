@@ -116,26 +116,23 @@ class EventService implements IEventService{
     return Ok(undefined)
   }
 
-  async searchEvents(input: string | null,): Promise<Result<Event[], string>> {
+  async searchEvents(input: string | null): Promise<Result<Event[], string>> {
     const term = input ?? "";
+    const normalized = term.trim().toLowerCase();
     const now = new Date();
 
     if (!term.trim()) {
       const result = await this.repository.listPublishedUpcoming(now);
-
       if (result.ok === false) {
         return Err(result.value.message);
       }
-
       return Ok(result.value);
     }
 
-    const result = await this.repository.searchPublishedUpcoming(term, now);
-
+    const result = await this.repository.searchPublishedUpcoming(normalized, now);
     if (result.ok === false) {
       return Err(result.value.message);
     }
-
     return Ok(result.value);
   }
 }

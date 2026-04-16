@@ -35,23 +35,19 @@ class EventRepository implements IEventRepository {
   }
 
   async searchPublishedUpcoming(term: string, now: Date) {
-    const normalized = term.trim().toLowerCase();
 
     const events = this.events.filter((e) => {
       const start = new Date(e.startDatetime);
-
       if (e.status !== "published" || start <= now) {
         return false;
       }
-
-      if (!normalized) {
+      if (!term) {
         return true;
       }
-
       return (
-        e.title.toLowerCase().includes(normalized) ||
-        e.description.toLowerCase().includes(normalized) ||
-        e.location.toLowerCase().includes(normalized)
+        e.title.toLowerCase().includes(term) ||
+        e.description.toLowerCase().includes(term) ||
+        e.location.toLowerCase().includes(term)
       );
     });
 
