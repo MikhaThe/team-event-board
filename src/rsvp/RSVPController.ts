@@ -15,7 +15,7 @@ export interface IRSVPController {
   ): Promise<void>;
 }
 
-class RSVPController implements IRSVPController {
+export class RSVPController implements IRSVPController {
   constructor(
     private readonly service: IRSVPService,
     private readonly logger: ILoggingService,
