@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <h1>Your Dashboard</h1>
+
+    <!-- Upcoming Events -->
+    <section>
+      <h2>Upcoming Events</h2>
+
+      <% if (dashboard.upcoming.length === 0) { %>
+        <p>No upcoming events.</p>
+      <% } else { %>
+        <ul>
+          <% dashboard.upcoming.forEach(event => { %>
+            <li>
+              <h3><%= event.title %></h3>
+              <p>
+                <strong>When:</strong>
+                <%= new Date(event.startDatetime).toLocaleString() %>
+              </p>
+              <p><strong>Location:</strong> <%= event.location %></p>
+              <p><strong>Status:</strong> <%= event.status %></p>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+
+    <!-- Past Events -->
+    <section>
+      <h2>Past Events</h2>
+
+      <% if (dashboard.past.length === 0) { %>
+        <p>No past events.</p>
+      <% } else { %>
+        <ul>
+          <% dashboard.past.forEach(event => { %>
+            <li>
+              <h3><%= event.title %></h3>
+              <p>
+                <strong>When:</strong>
+                <%= new Date(event.startDatetime).toLocaleString() %>
+              </p>
+              <p><strong>Location:</strong> <%= event.location %></p>
+              <p><strong>Status:</strong> <%= event.status %></p>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+
+  </body>
+</html>

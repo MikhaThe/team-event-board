@@ -1,12 +1,14 @@
-import type { Response } from "express";
+import type { Request, Response } from "express";
 import type { IDashboardService } from "./DashboardService";
 import type { ILoggingService } from "../service/LoggingService";
 import type { IAppBrowserSession } from "../session/AppSession";
+import { get } from "node:http";
+import { getAuthenticatedUser } from "../session/AppSession";
 
 export interface IDashboardController {
   getDashboard(
-    res: Response,
-    session: IAppBrowserSession,
+    req: Request,
+    res: Response
   ): Promise<void>;
 }
 
@@ -16,8 +18,9 @@ class DashboardController implements IDashboardController {
     private readonly logger: ILoggingService,
   ) {}
 
-  async getDashboard(res: Response, session: IAppBrowserSession): Promise<void> {
-    const user = session.authenticatedUser;
+  async getDashboard(req: Request, res: Response): Promise<void> {
+    const user = getAuthenticatedUser(req.session);
+
     if (!user) {
       this.logger.warn("Dashboard access without authentication");
       res.status(403).redirect("/login");
