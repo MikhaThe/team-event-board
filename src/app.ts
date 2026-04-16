@@ -15,11 +15,13 @@ import {
   AppSessionStore,
   recordPageView,
   touchAppSession,
+  IAppBrowserSession,
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
-
-import { showEvent } from "./event/EventController";
+import { IEventController } from "./event/EventController";
+import { IEventListController } from "./event/EventListController";
 import { IRSVPController } from "./rsvp/RSVPController";
+import { IDashboardController } from "./dashboard/DashboardController";
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -38,9 +40,12 @@ class ExpressApp implements IApp {
 
   constructor(
     private readonly eventController: IEventController,
+    private readonly eventlistController: IEventListController,
     private readonly authController: IAuthController,
+    private readonly organizerController: IOrganizerController,
     private readonly logger: ILoggingService,
-    private readonly rsvpController: IRSVPController
+    private readonly rsvpController: IRSVPController,
+    private readonly dashboardController: IDashboardController
   ) {
     this.app = express();
     this.registerMiddleware();
@@ -77,10 +82,6 @@ class ExpressApp implements IApp {
     return req.get("HX-Request") === "true";
   }
 
-  /**
-   * Middleware helper: returns true if the request is from an authenticated user.
-   * If the user is not authenticated, it handles the response (redirect or 401).
-   */
   private requireAuthenticated(req: Request, res: Response): boolean {
     const store = sessionStore(req);
     touchAppSession(store);
@@ -102,11 +103,6 @@ class ExpressApp implements IApp {
     return false;
   }
 
-  /**
-   * Middleware helper: returns true if the authenticated user has one of the
-   * allowed roles. Calls requireAuthenticated first, so unauthenticated
-   * requests are handled automatically.
-   */
   private requireRole(
     req: Request,
     res: Response,
@@ -243,9 +239,8 @@ class ExpressApp implements IApp {
     );
 
     // ── Authenticated home page ──────────────────────────────────────
-    // TODO: Replace this placeholder with your project's main page.
 
-     this.app.get(
+    this.app.get(
       "/home",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) {
@@ -258,7 +253,7 @@ class ExpressApp implements IApp {
       }),
     );
 
-    // ── Event list route (Feature 6) ───────────────────────────────
+    // ── Event list route (Feature 6) ─────────────────────────────────
 
     this.app.get(
       "/events",
@@ -267,14 +262,14 @@ class ExpressApp implements IApp {
           return;
         }
 
-        await listEvents(req, res);
+        await this.eventlistController.listEvents(req, res);
       }),
     );
 
     // ── Event detail route (Feature 2) ───────────────────────────────
 
-      this.app.get(
-       "/events/:id",
+    this.app.get(
+      "/events/:id",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) {
           return;
@@ -284,19 +279,86 @@ class ExpressApp implements IApp {
       }),
     );
 
-    // -- RSVP form route (Feature 4)
-      this.app.post("/events/:id/rsvp", asyncHandler(async (req, res) => {
+    // ── RSVP form route (Feature 4) ──────────────────────────────────
+
+    this.app.post(
+      "/events/:id/rsvp",
+      asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) {
           return;
         }
 
         const eventId = String(req.params.id);
         const capacity = Number(req.body.capacity);
-        const session = touchAppSession(req.session)
+        const session = touchAppSession(req.session as AppSessionStore);
 
-        await this.rsvpController.toggleRSVPFromForm(res, {eventId, capacity}, session);
+        await this.rsvpController.toggleRSVPFromForm(res, { eventId, capacity }, session);
       }),
     );
+
+    // ── Organizer event dashboard (Feature 8) ────────────────────────
+
+    this.app.get(
+      "/organizer/dashboard",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const store = sessionStore(req);
+        const session = recordPageView(store);
+        const currentUser = getAuthenticatedUser(store);
+        await this.organizerController.showOrganizerDashboard(res, currentUser!.userId, session);
+      }),
+    );
+
+    // ── Event publish / cancel (Feature 5) ───────────────────────────
+
+    this.app.post(
+      "/events/:id/publish",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const store = sessionStore(req);
+        const session = touchAppSession(store);
+        const currentUser = getAuthenticatedUser(store);
+        const eventId = typeof req.params.id === "string" ? req.params.id : "";
+        await this.organizerController.publishEventFromForm(res, eventId, currentUser!.userId, session);
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/cancel",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const store = sessionStore(req);
+        const session = touchAppSession(store);
+        const currentUser = getAuthenticatedUser(store);
+        const eventId = typeof req.params.id === "string" ? req.params.id : "";
+        await this.organizerController.cancelEventFromForm(res, eventId, currentUser!.userId, session);
+      }),
+    );
+
+    // ── RSVP Dashboard route (Feature 7) ───────────────────────────────
+    this.app.get(
+    "/dashboard",
+    asyncHandler(async (req, res) => {
+      if (!this.requireAuthenticated(req, res)) {
+          return;
+      }
+      await this.dashboardController.getDashboard(req, res);
+    })
+  );
+
+    // -- Event search route (Feature 10) ------------------------------
+      this.app.get(
+        "/events/search",
+        asyncHandler(async (req, res) => {
+          if (!this.requireAuthenticated(req, res)) {
+            return;
+          }
+          await this.eventController.searchEvents(req, res);
+        }),
+      );
 
     // ── Error handler ────────────────────────────────────────────────
 
@@ -317,9 +379,12 @@ class ExpressApp implements IApp {
 
 export function CreateApp(
   eventController: IEventController,
+  eventlistController: IEventListController,
   authController: IAuthController,
+  organizerController: IOrganizerController,
   logger: ILoggingService,
-  rsvpController: IRSVPController
+  rsvpController: IRSVPController,
+  dashboardController: IDashboardController
 ): IApp {
-  return new ExpressApp(authController, logger, rsvpController);
+  return new ExpressApp(eventController, eventlistController, authController, logger, rsvpController, dashboardController);
 }

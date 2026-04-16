@@ -7,11 +7,13 @@ import {
 } from "../session/AppSession";
 import type { Event } from "./Event";
 import { ILoggingService } from "../service/LoggingService";
+import { touchAppSession } from "../session/AppSession";
 
 export interface IEventController {
   showEvent(req: Request, res: Response): Promise<void>;
   showEditEvent(req: Request, res: Response): Promise<void>;
   updateEvent(req: Request, res: Response): Promise<void>;
+  searchEvents(req: Request, res: Response): Promise<void>;
 }
 
 class EventController implements IEventController {
@@ -122,6 +124,31 @@ class EventController implements IEventController {
     }
 
     res.redirect(`/events/${eventId}`);
+  }
+  
+  async searchEvents(req: Request, res: Response): Promise<void> {
+    const termRaw = req.query.q;
+    const term = Array.isArray(termRaw) ? termRaw[0] : termRaw;
+
+    const result = await this.service.searchEvents(String(term));
+
+    if (!result.ok) {
+      const error = result.value as EventDetailError;
+      
+      if (error.name === "EventNotFound") {
+        res.status(404).send(error.message);
+        return;
+      }
+
+      if (error.name === "Forbidden") {
+        res.status(403).send(error.message);
+        return;
+      }
+
+      res.status(400).send("Unknown error.");
+      return;
+    }
+    return;
   }
 }
 
