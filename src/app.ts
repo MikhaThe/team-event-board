@@ -37,6 +37,7 @@ class ExpressApp implements IApp {
   private readonly app: express.Express;
 
   constructor(
+    private readonly eventController: IEventController,
     private readonly authController: IAuthController,
     private readonly logger: ILoggingService,
     private readonly rsvpController: IRSVPController
@@ -257,6 +258,19 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // ── Event list route (Feature 6) ───────────────────────────────
+
+    this.app.get(
+      "/events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        await listEvents(req, res);
+      }),
+    );
+
     // ── Event detail route (Feature 2) ───────────────────────────────
 
       this.app.get(
@@ -266,7 +280,7 @@ class ExpressApp implements IApp {
           return;
         }
 
-        await showEvent(req, res);
+        await this.eventController.showEvent(req, res);
       }),
     );
 
@@ -302,6 +316,7 @@ class ExpressApp implements IApp {
 }
 
 export function CreateApp(
+  eventController: IEventController,
   authController: IAuthController,
   logger: ILoggingService,
   rsvpController: IRSVPController
