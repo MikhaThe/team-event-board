@@ -349,6 +349,17 @@ class ExpressApp implements IApp {
     })
   );
 
+    // -- Event search route (Feature 10) ------------------------------
+      this.app.get(
+        "/events/search",
+        asyncHandler(async (req, res) => {
+          if (!this.requireAuthenticated(req, res)) {
+            return;
+          }
+          await this.eventController.searchEvents(req, res);
+        }),
+      );
+
     // ── Error handler ────────────────────────────────────────────────
 
     this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
