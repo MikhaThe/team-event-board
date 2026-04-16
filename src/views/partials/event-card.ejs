@@ -1,0 +1,50 @@
+<div class="p-5 border border-slate-200 rounded-2xl bg-white shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+  <div class="flex-1 min-w-0">
+    <div class="flex items-center gap-2 mb-1 flex-wrap">
+      <h3 class="font-semibold text-slate-900 text-base truncate"><%= event.title %></h3>
+      <span class="text-xs px-2 py-0.5 rounded-full font-medium
+        <%= event.status === 'published' ? 'bg-green-100 text-green-700' :
+            event.status === 'draft'     ? 'bg-yellow-100 text-yellow-700' :
+            event.status === 'cancelled' ? 'bg-slate-100 text-slate-500' :
+                                           'bg-blue-100 text-blue-700' %>">
+        <%= event.status %>
+      </span>
+      <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">
+        <%= event.category %>
+      </span>
+    </div>
+    <p class="text-sm text-slate-500 truncate"><%= event.location %></p>
+    <p class="text-sm text-slate-400 mt-0.5">
+      <%= new Date(event.startDatetime).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) %>
+    </p>
+    <p class="text-sm text-slate-500 mt-1">
+      <% if (event.capacity) { %>
+        <span><strong class="text-slate-700"><%= event.attendeeCount %></strong> / <%= event.capacity %> attending</span>
+      <% } else { %>
+        <span><strong class="text-slate-700"><%= event.attendeeCount %></strong> attending</span>
+      <% } %>
+    </p>
+  </div>
+
+  <% if (action === "publish") { %>
+    <form method="post" action="/events/<%= event.id %>/publish" class="m-0 shrink-0">
+      <button
+        type="submit"
+        class="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium cursor-pointer hover:bg-green-700"
+      >
+        Publish
+      </button>
+    </form>
+  <% } else if (action === "cancel") { %>
+    <form method="post" action="/events/<%= event.id %>/cancel" class="m-0 shrink-0"
+      x-data
+      @submit.prevent="if (confirm('Are you sure you want to cancel this event?')) $el.submit()">
+      <button
+        type="submit"
+        class="px-4 py-2 rounded-lg bg-red-50 text-red-600 border border-red-200 text-sm font-medium cursor-pointer hover:bg-red-100"
+      >
+        Cancel Event
+      </button>
+    </form>
+  <% } %>
+</div>
