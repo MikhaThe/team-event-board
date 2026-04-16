@@ -17,8 +17,9 @@ import {
   touchAppSession,
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
-import { IEventController} from "./event/EventController";
-import { listEvents } from "./event/EventListController";
+
+import { showEvent } from "./event/EventController";
+import { IRSVPController } from "./rsvp/RSVPController";
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -38,7 +39,8 @@ class ExpressApp implements IApp {
   constructor(
     private readonly eventController: IEventController,
     private readonly authController: IAuthController,
-    private readonly logger: ILoggingService
+    private readonly logger: ILoggingService,
+    private readonly rsvpController: IRSVPController
   ) {
     this.app = express();
     this.registerMiddleware();
@@ -282,29 +284,19 @@ class ExpressApp implements IApp {
       }),
     );
 
-    // ── Event edit route (Feature 3) ───────────────────────────────
-
-      this.app.get(
-      "/events/:id/edit",
-      asyncHandler(async (req, res) => {
+    // -- RSVP form route (Feature 4)
+      this.app.post("/events/:id/rsvp", asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) {
           return;
         }
 
-        await this.eventController.showEditEvent(req, res);
-        }),
-      );
+        const eventId = String(req.params.id);
+        const capacity = Number(req.body.capacity);
+        const session = touchAppSession(req.session)
 
-      this.app.post(
-        "/events/:id/edit",
-        asyncHandler(async (req, res) => {
-          if (!this.requireAuthenticated(req, res)) {
-            return;
-          }
-
-          await this.eventController.updateEvent(req, res);
-        }),
-      );
+        await this.rsvpController.toggleRSVPFromForm(res, {eventId, capacity}, session);
+      }),
+    );
 
     // ── Error handler ────────────────────────────────────────────────
 
@@ -327,6 +319,7 @@ export function CreateApp(
   eventController: IEventController,
   authController: IAuthController,
   logger: ILoggingService,
+  rsvpController: IRSVPController
 ): IApp {
-  return new ExpressApp(eventController, authController, logger);
+  return new ExpressApp(authController, logger, rsvpController);
 }
