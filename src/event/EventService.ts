@@ -16,17 +16,14 @@ export interface IEventService {
     viewerRole?: string
   ): Promise<Result<void, EventDetailError>>;
   saveEvent(event: Event): Promise<Result<void, string>>;
+  searchEvents(input: string | null,): Promise<Result<Event[], string>>;
 }
 
 class EventService implements IEventService{
 
   constructor(private readonly repository: IEventRepository) {}
 
-  async getEventDetail(
-    eventId: string,
-    viewerId?: string,
-    viewerRole?: string,
-  ): Promise<Result<Event, EventDetailError>> {
+  async getEventDetail(eventId: string, viewerId?: string, viewerRole?: string): Promise<Result<Event, EventDetailError>> {
     const eventResult = await this.repository.findById(eventId)
 
     if (eventResult.ok === false) {
@@ -117,6 +114,29 @@ class EventService implements IEventService{
       return Err("Failed to save event.")
     }
     return Ok(undefined)
+  }
+
+  async searchEvents(input: string | null,): Promise<Result<Event[], string>> {
+    const term = input ?? "";
+    const now = new Date();
+
+    if (!term.trim()) {
+      const result = await this.repository.listPublishedUpcoming(now);
+
+      if (result.ok === false) {
+        return Err(result.value.message);
+      }
+
+      return Ok(result.value);
+    }
+
+    const result = await this.repository.searchPublishedUpcoming(term, now);
+
+    if (result.ok === false) {
+      return Err(result.value.message);
+    }
+
+    return Ok(result.value);
   }
 }
 
