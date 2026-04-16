@@ -6,6 +6,7 @@ import { InMemoryEventRepository } from "./EventRepository"
 export type EventDetailError =
   | { name: "EventNotFound"; message: string }
   | { name: "Forbidden"; message: string }
+  | { name: "InvalidInput"; message: string }
 
 export type EditEventInput = {
   title?: string
@@ -14,6 +15,18 @@ export type EditEventInput = {
   category?: string
   startDatetime?: string
   endDatetime?: string
+}
+
+export type CreateEventInput = {
+  title: string;
+  description: string;
+  location: string;
+  category: string;
+  startDatetime: string;
+  endDatetime: string;
+  capacity?: number;
+  organizerId: string;
+  organizerName: string;
 }
 
 export interface IEventService {
@@ -36,6 +49,7 @@ export interface IEventService {
   ): Promise<Result<void, EventDetailError>>;
   saveEvent(event: Event): Promise<Result<void, EventDetailError>>;
   searchEvents(input: string | null,): Promise<Result<Event[], EventDetailError>>;
+  createEvent(input: CreateEventInput): Promise<Result<Event, EventDetailError>>;
 }
 
 export class EventService implements IEventService {
@@ -44,16 +58,16 @@ export class EventService implements IEventService {
   ) {}
 
   async getEventDetail(eventId: string, viewerId?: string, viewerRole?: string): Promise<Result<Event, EventDetailError>> {
-    const eventResult = await this.repository.findById(eventId)
+    const eventResult = await this.eventRepository.findById(eventId)
 
-    if (!result.ok) {
+    if (!eventResult.ok) {
       return Err({
         name: "EventNotFound" as const,
         message: "Event not found.",
       })
     }
 
-    const event = result.value
+    const event = eventResult.value
 
     if (!event) {
       return Err({
@@ -107,7 +121,7 @@ export class EventService implements IEventService {
     updates: EditEventInput,
     viewerId?: string,
     viewerRole?: string,
-  ): Promise<Result<Event, EventDetailError>> {
+  ): Promise<Result<void, EventDetailError>> {
     const result = await this.eventRepository.findById(eventId)
 
     if (!result.ok) {
@@ -154,7 +168,7 @@ export class EventService implements IEventService {
   }
 
   async saveEvent(event: Event): Promise<Result<void, EventDetailError>> {
-    const saveResult = await this.repository.save(event)
+    const saveResult = await this.eventRepository.save(event)
     if (saveResult.ok === false) {
       return Err({
           name: "EventNotFound" as const,
@@ -170,7 +184,7 @@ export class EventService implements IEventService {
     const now = new Date();
 
     if (!term.trim()) {
-      const result = await this.repository.listPublishedUpcoming(now);
+      const result = await this.eventRepository.listPublishedUpcoming(now);
       if (!result.ok) {
         return Err({
           name: "EventNotFound" as const,
@@ -180,13 +194,55 @@ export class EventService implements IEventService {
       return Ok(result.value);
     }
 
-    const result = await this.repository.searchPublishedUpcoming(normalized, now);
+    const result = await this.eventRepository.searchPublishedUpcoming(normalized, now);
     if (result.ok === false) {
       return Err({
         name: "EventNotFound" as const,
         message: "Event not found.",
       })
     }
+    return Ok(result.value);
+  }
+
+  async createEvent(input: CreateEventInput): Promise<Result<Event, EventDetailError>> {
+    const { title, description, location, category,
+            startDatetime, endDatetime, capacity,
+            organizerId, organizerName } = input;
+
+    if (!title?.trim())
+      return Err({ name: "InvalidInput" as const, message: "Title is required." });
+
+    if (!location?.trim())
+      return Err({ name: "InvalidInput" as const, message: "Location is required." });
+
+    if (!category?.trim())
+      return Err({ name: "InvalidInput" as const, message: "Category is required." });
+
+    if (!startDatetime || !endDatetime)
+      return Err({ name: "InvalidInput" as const, message: "Start and end times are required." });
+
+    if (new Date(endDatetime) <= new Date(startDatetime))
+      return Err({ name: "InvalidInput" as const, message: "End time must be after start time." });
+
+    if (capacity !== undefined && capacity !== null && capacity < 1)
+      return Err({ name: "InvalidInput" as const, message: "Capacity must be at least 1." });
+
+    const result = await this.eventRepository.create({
+      title: title.trim(),
+      description: description?.trim() ?? "",
+      location: location.trim(),
+      category: category.trim(),
+      status: "draft",
+      organizerId,
+      organizerName,
+      startDatetime,
+      endDatetime,
+      capacity: capacity ? Number(capacity) : undefined,
+    });
+
+    if (!result.ok)
+      return Err({ name: "EventNotFound" as const, message: result.value as string });
+
     return Ok(result.value);
   }
 }

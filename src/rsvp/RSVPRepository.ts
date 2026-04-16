@@ -5,6 +5,7 @@ import { RSVPNotFound, type RSVPError } from "../auth/errors"
 
 export interface IRSVPRepository {
     findByEvent(eventId: string): Promise<Result<IRSVPRecord[], RSVPError>>;
+    findByUser(userId: string): Promise<Result<IRSVPRecord[], RSVPError>>;
     findByUserAndEvent(userId: string, eventId: string): Promise<Result<IRSVPRecord | null, RSVPError>>;
     countGoingByEvent(eventId: string): Promise<Result<number, RSVPError>>
     create(userId: string, eventId: string, status: RSVPStatus): Promise<Result<IRSVPRecord, RSVPError>>;
@@ -17,6 +18,11 @@ class RSVPRepository implements IRSVPRepository {
     async findByEvent(eventId: string): Promise<Result<IRSVPRecord[], RSVPError>> {
         const records = this.rsvpStore.filter(r => r.eventId === eventId)
         return Ok(records)
+    }
+
+    async findByUser(userId: string): Promise<Result<IRSVPRecord[], RSVPError>> {
+        const records = this.rsvpStore.filter(r => r.userId === userId);
+        return Ok(records);
     }
 
     async findByUserAndEvent(userId: string, eventId: string): Promise<Result<IRSVPRecord | null, RSVPError>> {

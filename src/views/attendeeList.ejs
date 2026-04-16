@@ -1,0 +1,73 @@
+<div class="max-w-3xl mx-auto mt-8 p-6">
+  <a href="/events/<%= eventId %>"
+     class="text-blue-600 hover:underline text-sm">
+    ← Back to event
+  </a>
+
+  <h1 class="text-2xl font-bold mt-4 mb-6">
+    Attendees: <%= eventTitle %>
+  </h1>
+
+  <!-- GOING -->
+  <section class="mb-8">
+    <h2 class="text-lg font-semibold mb-3">
+      Attending (<%= going.length %>)
+    </h2>
+    <% if (going.length === 0) { %>
+      <p class="text-gray-500 text-sm">No attendees yet.</p>
+    <% } else { %>
+      <ul class="divide-y border rounded">
+        <% going.forEach(rsvp => { %>
+          <li class="flex justify-between px-4 py-3 text-sm">
+            <span class="font-medium"><%= rsvp.displayName %></span>
+            <span class="text-gray-400">
+              <%= new Date(rsvp.createdAt).toLocaleString() %>
+            </span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <!-- WAITLISTED -->
+  <section class="mb-8">
+    <h2 class="text-lg font-semibold mb-3">
+      Waitlisted (<%= waitlisted.length %>)
+    </h2>
+    <% if (waitlisted.length === 0) { %>
+      <p class="text-gray-500 text-sm">No one on the waitlist.</p>
+    <% } else { %>
+      <ul class="divide-y border rounded">
+        <% waitlisted.forEach((rsvp, index) => { %>
+          <li class="flex justify-between px-4 py-3 text-sm">
+            <span class="font-medium">
+              #<%= index + 1 %> — <%= rsvp.displayName %>
+            </span>
+            <span class="text-gray-400">
+              <%= new Date(rsvp.createdAt).toLocaleString() %>
+            </span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <!-- CANCELLED -->
+  <section class="mb-8">
+    <h2 class="text-lg font-semibold mb-3">
+      Cancelled (<%= cancelled.length %>)
+    </h2>
+    <% if (cancelled.length === 0) { %>
+      <p class="text-gray-500 text-sm">No cancellations.</p>
+    <% } else { %>
+      <ul class="divide-y border rounded">
+        <% cancelled.forEach(rsvp => { %>
+          <li class="flex justify-between px-4 py-3 text-sm text-gray-400">
+            <span><%= rsvp.displayName %></span>
+            <span><%= new Date(rsvp.createdAt).toLocaleString() %></span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+</div>

@@ -11,3 +11,12 @@
 <p><strong>End:</strong> <%= event.endDatetime %></p>
 
 <p><strong>Attendance:</strong> <%= event.attendeeCount %>/<%= event.capacity ?? "No limit" %></p>
+
+<% if (session.authenticatedUser &&
+      (session.authenticatedUser.userId === event.organizerId ||
+       session.authenticatedUser.role === "admin")) { %>
+  <a href="/events/<%= event.id %>/attendees"
+     class="inline-block mt-4 text-sm text-blue-600 hover:underline">
+    View Attendee List
+  </a>
+<% } %>

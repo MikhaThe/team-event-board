@@ -7,13 +7,14 @@ import {
 } from "../session/AppSession";
 import type { Event } from "./Event";
 import { ILoggingService } from "../service/LoggingService";
-import { touchAppSession } from "../session/AppSession";
 
 export interface IEventController {
   showEvent(req: Request, res: Response): Promise<void>;
   showEditEvent(req: Request, res: Response): Promise<void>;
   updateEvent(req: Request, res: Response): Promise<void>;
   searchEvents(req: Request, res: Response): Promise<void>;
+  showCreateForm(req: Request, res: Response): Promise<void>;
+  createEvent(req: Request, res: Response): Promise<void>;
 }
 
 class EventController implements IEventController {
@@ -148,7 +149,65 @@ class EventController implements IEventController {
       res.status(400).send("Unknown error.");
       return;
     }
-    return;
+    const browserSession = touchAppSession(req.session as AppSessionStore);
+    res.render("eventList", { events: result.value, session: browserSession });
+  }
+
+  async showCreateForm(req: Request, res: Response): Promise<void> {
+    const session = touchAppSession(req.session as AppSessionStore);
+    const user = session.authenticatedUser;
+
+    if (!user || user.role === "user") {
+      res.status(403).render("partials/error", {
+        message: "You do not have permission to create events.",
+      });
+      return;
+    }
+
+    res.render("createEvent", {
+      session,
+      formData: {},
+      error: null,
+    });
+  }
+
+  async createEvent(req: Request, res: Response): Promise<void> {
+    const session = touchAppSession(req.session as AppSessionStore);
+    const user = session.authenticatedUser;
+
+    if (!user || user.role === "user") {
+      res.status(403).render("partials/error", {
+        message: "You do not have permission to create events.",
+      });
+      return;
+    }
+
+    const { title, description, location, category,
+            startDatetime, endDatetime, capacity } = req.body;
+
+    const result = await this.service.createEvent({
+      title,
+      description,
+      location,
+      category,
+      startDatetime,
+      endDatetime,
+      capacity: capacity ? Number(capacity) : undefined,
+      organizerId: user.userId,
+      organizerName: user.displayName,
+    });
+
+    if (!result.ok) {
+      const error = result.value as EventDetailError;
+      res.status(400).render("createEvent", {
+        session,
+        error: error.message,
+        formData: req.body,
+      });
+      return;
+    }
+
+    res.redirect(`/events/${result.value.id}`);
   }
 }
 

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import type { Event } from "./Event"
 import type { Result } from "../lib/result"
 import type { AuthError } from "../auth/errors"
@@ -9,10 +10,11 @@ export interface IEventRepository {
   save(event: Event): Promise<Result<void, string>>
   searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], AuthError>>;
   listPublishedUpcoming(now: Date): Promise<Result<Event[], AuthError>>;
+  create(event: Omit<Event, "id" | "attendeeCount" | "createdAt" | "updatedAt">): Promise<Result<Event, string>>;
 }
 
 class EventRepository implements IEventRepository {
-  private events: Event[] = []
+  private events: Map<string, Event> = new Map()
 
   constructor() {
     this.events.set("1", {
@@ -62,19 +64,22 @@ class EventRepository implements IEventRepository {
   }
 
   async findById(id: string): Promise<Result<Event | null, string>> {
-    const event = this.events.find(e => e.id == id) ?? null
-    return Ok(event) 
+    const event = this.events.get(id) ?? null
+    return Ok(event)
+  }
+
+  async findAll(): Promise<Result<Event[], string>> {
+    return Ok(Array.from(this.events.values()))
   }
 
   async save(event: Event): Promise<Result<void, string>> {
-    this.events.push(event)
+    this.events.set(event.id, event)
     return Ok(undefined)
   }
 
   async listPublishedUpcoming(now: Date) {
-    const events = this.events.filter((e) => {
+    const events = Array.from(this.events.values()).filter((e) => {
       const start = new Date(e.startDatetime);
-
       return e.status === "published" && start > now;
     });
 
@@ -82,8 +87,7 @@ class EventRepository implements IEventRepository {
   }
 
   async searchPublishedUpcoming(term: string, now: Date) {
-
-    const events = this.events.filter((e) => {
+    const events = Array.from(this.events.values()).filter((e) => {
       const start = new Date(e.startDatetime);
       if (e.status !== "published" || start <= now) {
         return false;
@@ -99,6 +103,16 @@ class EventRepository implements IEventRepository {
     });
 
     return Ok(events);
+  }
+
+  async create(data: Omit<Event, "id" | "attendeeCount">): Promise<Result<Event, string>> {
+    const event: Event = {
+      ...data,
+      id: randomUUID(),
+      attendeeCount: 0,
+    };
+    this.events.set(event.id, event);
+    return Ok(event);
   }
 }
 
