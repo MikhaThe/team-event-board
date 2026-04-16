@@ -10,6 +10,13 @@ import type { ILoggingService } from "./service/LoggingService";
 import { CreateEventController } from "./event/EventController";
 import { CreateEventService } from "./event/EventService";
 import { InMemoryEventRepository } from "./event/EventRepository";
+import { CreateRSVPService } from "./rsvp/RSVPService";
+import { CreateRSVPRepository } from "./rsvp/RSVPRepository";
+import { RSVPController } from "./rsvp/RSVPController";
+import { CreateInMemoryEventRepository } from "./events/InMemoryEventRepository";
+import { CreateInMemoryRsvpRepository } from "./events/InMemoryRsvpRepository";
+import { CreateEventService as CreateOrganizerEventService } from "./events/EventService";
+import { CreateEventController as CreateOrganizerController } from "./events/EventController";
 
 export function createComposedApp(logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
@@ -20,9 +27,22 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const authService = CreateAuthService(authUsers, passwordHasher);
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
+
+  // Event wiring (Feature 2 / Feature 6)
   const eventRepository = InMemoryEventRepository();
   const eventService = CreateEventService(eventRepository);
   const eventController = CreateEventController(eventService, resolvedLogger);
 
-  return CreateApp(eventController, authController, resolvedLogger);
+  // RSVP wiring (Feature 4)
+  const rsvpRepository = CreateRSVPRepository();
+  const rsvpService = CreateRSVPService(rsvpRepository);
+  const rsvpController = new RSVPController(rsvpService, resolvedLogger);
+
+  // Organizer event wiring (Features 5 & 8)
+  const organizerEventRepo = CreateInMemoryEventRepository();
+  const organizerRsvpRepo = CreateInMemoryRsvpRepository();
+  const organizerEventService = CreateOrganizerEventService(organizerEventRepo, organizerRsvpRepo);
+  const organizerController = CreateOrganizerController(organizerEventService, resolvedLogger);
+
+  return CreateApp(eventController, authController, organizerController, resolvedLogger, rsvpController);
 }
