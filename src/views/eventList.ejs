@@ -1,0 +1,41 @@
+<h1>Events</h1>
+
+<form method="GET" action="/events">
+  <div>
+    <label for="category">Category:</label>
+    <input
+      type="text"
+      id="category"
+      name="category"
+      value="<%= selectedCategory %>"
+    />
+  </div>
+
+  <div>
+    <label for="date">Date:</label>
+    <input
+      type="date"
+      id="date"
+      name="date"
+      value="<%= selectedDate %>"
+    />
+  </div>
+
+  <button type="submit">Filter</button>
+</form>
+
+<hr />
+
+<% if (events.length === 0) { %>
+  <p>No matching published events found.</p>
+<% } %>
+
+<ul>
+  <% events.forEach((event) => { %>
+    <li>
+      <a href="/events/<%= event.id %>"><%= event.title %></a>
+      - <%= event.category %>
+      - <%= event.startDatetime %>
+    </li>
+  <% }) %>
+</ul>

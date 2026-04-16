@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
-import { Result } from "../lib/result";
-import { IEventService } from "./EventService";
-import { EventDetailError } from "../lib/error";
-import { getAuthenticatedUser } from "../session/AppSession";
+import type { IEventService, EventDetailError } from "./EventService";
+import {
+  getAuthenticatedUser,
+  touchAppSession,
+  type AppSessionStore,
+} from "../session/AppSession";
 import type { Event } from "./Event";
 import { ILoggingService } from "../service/LoggingService";
 
@@ -29,7 +31,7 @@ class EventController implements IEventController {
     );
 
     if (result.ok === false) {
-      const error = result.value;
+      const error = result.value as EventDetailError;
 
       if (error.name === "EventNotFound") {
         res.status(404).send(error.message);
@@ -46,13 +48,15 @@ class EventController implements IEventController {
     }
 
     const event: Event = result.value;
+    const browserSession = touchAppSession(req.session as AppSessionStore);
 
     res.render("eventDetail", {
       event,
+      session: browserSession,
     });
   }
 
-   async showEditEvent(req: Request, res: Response): Promise<void> {
+  async showEditEvent(req: Request, res: Response): Promise<void> {
     const eventId = req.params.id as string;
     const user = getAuthenticatedUser(req.session);
 
@@ -79,8 +83,11 @@ class EventController implements IEventController {
       return;
     }
 
+    const browserSession = touchAppSession(req.session as AppSessionStore);
+
     res.render("editEvent", {
       event: result.value,
+      session: browserSession,
     });
   }
 
@@ -118,6 +125,9 @@ class EventController implements IEventController {
   }
 }
 
-export function CreateEventController(service: IEventService, logger: ILoggingService): IEventController {
+export function CreateEventController(
+  service: IEventService,
+  logger: ILoggingService
+): IEventController {
   return new EventController(service, logger);
 }
