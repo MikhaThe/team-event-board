@@ -15,8 +15,8 @@ export interface IEventService {
     viewerId?: string,
     viewerRole?: string
   ): Promise<Result<void, EventDetailError>>;
-  saveEvent(event: Event): Promise<Result<void, string>>;
-  searchEvents(input: string | null,): Promise<Result<Event[], string>>;
+  saveEvent(event: Event): Promise<Result<void, EventDetailError>>;
+  searchEvents(input: string | null,): Promise<Result<Event[], EventDetailError>>;
 }
 
 class EventService implements IEventService{
@@ -108,30 +108,39 @@ class EventService implements IEventService{
     return Ok(undefined);
   }
 
-  async saveEvent(event: Event): Promise<Result<void, string>> {
+  async saveEvent(event: Event): Promise<Result<void, EventDetailError>> {
     const saveResult = await this.repository.save(event)
     if (saveResult.ok === false) {
-      return Err("Failed to save event.")
+      return Err({
+          name: "EventNotFound" as const,
+          message: "Event not found.",
+        })
     }
     return Ok(undefined)
   }
 
-  async searchEvents(input: string | null): Promise<Result<Event[], string>> {
+  async searchEvents(input: string | null): Promise<Result<Event[], EventDetailError>> {
     const term = input ?? "";
     const normalized = term.trim().toLowerCase();
     const now = new Date();
 
     if (!term.trim()) {
       const result = await this.repository.listPublishedUpcoming(now);
-      if (result.ok === false) {
-        return Err(result.value.message);
+      if (!result.ok) {
+        return Err({
+          name: "EventNotFound" as const,
+          message: "Event not found.",
+        })
       }
       return Ok(result.value);
     }
 
     const result = await this.repository.searchPublishedUpcoming(normalized, now);
     if (result.ok === false) {
-      return Err(result.value.message);
+      return Err({
+        name: "EventNotFound" as const,
+        message: "Event not found.",
+      })
     }
     return Ok(result.value);
   }
