@@ -6,6 +6,7 @@ import {
   type IAppBrowserSession,
 } from "../session/AppSession";
 import type { AuthError } from "../auth/errors";
+import { create } from "node:domain";
 
 export interface IRSVPController {
   toggleRSVPFromForm(
@@ -68,4 +69,8 @@ class RSVPController implements IRSVPController {
     // Redirect back to event page (typical UX)
     res.redirect(`/events/${rsvp.eventId}`);
   }
+}
+
+export function CreateRSVPController(service: IRSVPService, logger: ILoggingService): IRSVPController {
+  return new RSVPController(service, logger);
 }

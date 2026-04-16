@@ -1,17 +1,21 @@
 import { Request, Response } from "express";
-import { EventService } from "./EventService";
+import { IEventService } from "./EventService";
 import {
   touchAppSession,
   type AppSessionStore,
 } from "../session/AppSession";
-
-const eventService = new EventService();
+import { ILoggingService } from "../service/LoggingService";
 
 export interface IEventListController {
   listEvents(req: Request, res: Response): Promise<void>;
 }
 
 export class EventListController implements IEventListController {
+  constructor(
+    private eventService: IEventService,
+    private logger: ILoggingService
+  ) {}
+
   async listEvents(req: Request, res: Response): Promise<void> {
       const category =
         typeof req.query.category === "string" ? req.query.category : undefined;
@@ -19,7 +23,7 @@ export class EventListController implements IEventListController {
     const date =
       typeof req.query.date === "string" ? req.query.date : undefined;
 
-    const result = await eventService.getFilteredEvents(category, date);
+    const result = await this.eventService.getFilteredEvents(category, date);
 
     if (!result.ok) {
       res.status(500).send(result.value);
@@ -35,4 +39,11 @@ export class EventListController implements IEventListController {
       session: browserSession,
     });
   }
+}
+
+export function CreateEventListController(
+  eventService: IEventService,
+  logger: ILoggingService
+): IEventListController {
+  return new EventListController(eventService, logger);
 }

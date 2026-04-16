@@ -4,6 +4,7 @@ import type { ILoggingService } from "../service/LoggingService";
 import type { IAppBrowserSession } from "../session/AppSession";
 import { get } from "node:http";
 import { getAuthenticatedUser } from "../session/AppSession";
+import session from "express-session";
 
 export interface IDashboardController {
   getDashboard(
@@ -43,7 +44,7 @@ class DashboardController implements IDashboardController {
 
     this.logger.info(`Dashboard loaded for user=${user.userId}`);
     // Pass the view model to your template engine of choice.
-    res.status(200).render("dashboard", { dashboard: result.value });
+    res.status(200).render("dashboard", { dashboard: result.value, session: req.session });
   }
 }
 
