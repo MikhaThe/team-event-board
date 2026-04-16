@@ -279,6 +279,30 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // ── Event edit route (Feature 3) ───────────────────────────────
+
+      this.app.get(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        await this.eventController.showEditEvent(req, res);
+        }),
+      );
+
+      this.app.post(
+        "/events/:id/edit",
+        asyncHandler(async (req, res) => {
+          if (!this.requireAuthenticated(req, res)) {
+            return;
+          }
+
+          await this.eventController.updateEvent(req, res);
+        }),
+      );
+
     // ── RSVP form route (Feature 4) ──────────────────────────────────
 
     this.app.post(
