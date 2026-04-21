@@ -11,6 +11,30 @@ export interface IRSVPRepository {
     updateStatus(userId: string, eventId: string, status: RSVPStatus): Promise<Result<IRSVPRecord, RSVPError>>;
 }
 
+export const SEED_RSVPS: IRSVPRecord[] = [
+  {
+    id: "rsvp-1",
+    eventId: "event-2",
+    userId: "user-staff",
+    status: "going",
+    createdAt: new Date(),
+  },
+  {
+    id: "rsvp-2",
+    eventId: "event-2",
+    userId: "user-reader",
+    status: "going",
+    createdAt: new Date(),
+  },
+  {
+    id: "rsvp-3",
+    eventId: "event-3",
+    userId: "user-reader",
+    status: "going",
+    createdAt: new Date(),
+  },
+];
+
 class RSVPRepository implements IRSVPRepository {
     constructor(private readonly rsvpStore: IRSVPRecord[]) {};
 
