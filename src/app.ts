@@ -21,8 +21,7 @@ import { ILoggingService } from "./service/LoggingService";
 import { IEventController } from "./event/EventController";
 import { IEventListController } from "./event/EventListController";
 import { IRSVPController } from "./rsvp/RSVPController";
-import type { IEventController as IOrganizerController } from "./organizerdashboard/OrganizerDashboard";
-import { listEvents } from "./event/EventListController";
+import { IDashboardController } from "./dashboard/DashboardController";
 
 type AsyncRequestHandler = RequestHandler;
 

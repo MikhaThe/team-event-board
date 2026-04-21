@@ -1,9 +1,8 @@
 import type { Response } from "express";
-import type { IEventService } from "../event/EventService";
-import type { IOrganizerService } from "./OrganizerService";
+import type { IEventService } from "./EventService";
 import type { ILoggingService } from "../service/LoggingService";
 import type { IAppBrowserSession } from "../session/AppSession";
-import type { IOrganizerDashboard } from "./OrganizerEvents";
+import type { IOrganizerDashboard } from "./Event";
 
 export interface IEventController {
   showOrganizerDashboard(
@@ -26,17 +25,17 @@ export interface IEventController {
   ): Promise<void>;
 }
 
-class OrganizerController implements IEventController {
+class EventController implements IEventController {
   constructor(
-    private readonly eventService: IEventService,
-    private readonly organizerService: IOrganizerService,
+    private readonly service: IEventService,
     private readonly logger: ILoggingService,
   ) {}
 
   private mapErrorStatus(errorName: string): number {
     if (errorName === "EventNotFound") return 404;
-    if (errorName === "Forbidden") return 403;
+    if (errorName === "Unauthorized") return 403;
     if (errorName === "InvalidTransition") return 409;
+    if (errorName === "ValidationError") return 400;
     return 500;
   }
 
@@ -46,12 +45,12 @@ class OrganizerController implements IEventController {
     session: IAppBrowserSession,
     pageError: string | null = null,
   ): Promise<void> {
-    const result = await this.organizerService.getOrganizerDashboard(organizerId);
+    const result = await this.service.getOrganizerDashboard(organizerId);
 
-    if (!result.ok) {
+    if (result.ok === false) {
       res.status(500).render("events/organizer-dashboard", {
         session,
-        pageError: pageError ?? result.value,
+        pageError: pageError ?? result.value.message,
         dashboard: { draft: [], published: [], cancelled: [], past: [] } as IOrganizerDashboard,
       });
       return;
@@ -79,9 +78,9 @@ class OrganizerController implements IEventController {
     organizerId: string,
     session: IAppBrowserSession,
   ): Promise<void> {
-    const result = await this.eventService.publishEvent(eventId, organizerId);
+    const result = await this.service.publishEvent(eventId, organizerId);
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const status = this.mapErrorStatus(result.value.name);
       const log = status >= 500 ? this.logger.error : this.logger.warn;
       log.call(this.logger, `Publish event failed: ${result.value.message}`);
@@ -100,9 +99,9 @@ class OrganizerController implements IEventController {
     organizerId: string,
     session: IAppBrowserSession,
   ): Promise<void> {
-    const result = await this.eventService.cancelEvent(eventId, organizerId);
+    const result = await this.service.cancelEvent(eventId, organizerId);
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const status = this.mapErrorStatus(result.value.name);
       const log = status >= 500 ? this.logger.error : this.logger.warn;
       log.call(this.logger, `Cancel event failed: ${result.value.message}`);
@@ -116,10 +115,9 @@ class OrganizerController implements IEventController {
   }
 }
 
-export function CreateOrganizerController(
-  eventService: IEventService,
-  organizerService: IOrganizerService,
+export function CreateEventController(
+  service: IEventService,
   logger: ILoggingService,
 ): IEventController {
-  return new OrganizerController(eventService, organizerService, logger);
+  return new EventController(service, logger);
 }

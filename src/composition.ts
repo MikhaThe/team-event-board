@@ -16,9 +16,6 @@ import { CreateDashboardService } from "./dashboard/DashboardService";
 import { CreateRSVPController } from "./rsvp/RSVPController";
 import { CreateRSVPService } from "./rsvp/RSVPService";
 import { CreateRSVPRepository } from "./rsvp/RSVPRepository";
-import { RSVPController } from "./rsvp/RSVPController";
-import { CreateOrganizerService } from "./organizerdashboard/OrganizerService";
-import { CreateOrganizerController } from "./organizerdashboard/OrganizerDashboard";
 
 export function createComposedApp(logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
@@ -37,11 +34,9 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const eventListController = CreateEventListController(eventService, resolvedLogger);
   const rsvpRepository = CreateRSVPRepository();
   const rsvpService = CreateRSVPService(rsvpRepository);
-  const rsvpController = new RSVPController(rsvpService, resolvedLogger);
-
-  // Organizer event wiring (Features 5 & 8)
-  const organizerService = CreateOrganizerService(eventRepository, rsvpRepository);
-  const organizerController = CreateOrganizerController(eventService, organizerService, resolvedLogger);
+  const rsvpController = CreateRSVPController(rsvpService, resolvedLogger);
+  const dashboardService = CreateDashboardService(rsvpRepository, eventRepository);
+  const dashboardController = CreateDashboardController(dashboardService, resolvedLogger);
 
   return CreateApp(eventController, eventListController, authController, resolvedLogger, rsvpController, dashboardController);
 }
