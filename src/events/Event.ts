@@ -1,5 +1,4 @@
 export type EventStatus = "draft" | "published" | "cancelled" | "past";
-export type RsvpStatus = "going" | "waitlisted" | "cancelled";
 
 export interface IEvent {
   id: string;
@@ -14,14 +13,6 @@ export interface IEvent {
   organizerId: string;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface IRsvp {
-  id: string;
-  eventId: string;
-  userId: string;
-  status: RsvpStatus;
-  createdAt: string;
 }
 
 export interface IEventWithCount extends IEvent {

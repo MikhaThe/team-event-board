@@ -7,7 +7,7 @@ import {
   type EventError,
 } from "./errors";
 import type { IEventRepository } from "./EventRepository";
-import type { IRsvpRepository } from "./RsvpRepository";
+import type { IRSVPRepository } from "../rsvp/RSVPRepository";
 import type { IEvent, IEventWithCount, IOrganizerDashboard } from "./Event";
 
 export interface IEventService {
@@ -19,7 +19,7 @@ export interface IEventService {
 class EventService implements IEventService {
   constructor(
     private readonly events: IEventRepository,
-    private readonly rsvps: IRsvpRepository,
+    private readonly rsvps: IRSVPRepository,
   ) {}
 
   async publishEvent(eventId: string, organizerId: string): Promise<Result<IEvent, EventError>> {
@@ -107,7 +107,7 @@ class EventService implements IEventService {
     const eventsWithCounts: IEventWithCount[] = [];
 
     for (const event of eventsResult.value) {
-      const countResult = await this.rsvps.countGoingByEventId(event.id);
+      const countResult = await this.rsvps.countGoingByEvent(event.id);
       if (countResult.ok === false) {
         return Err(UnexpectedError(countResult.value.message));
       }
@@ -127,7 +127,7 @@ class EventService implements IEventService {
 
 export function CreateEventService(
   events: IEventRepository,
-  rsvps: IRsvpRepository,
+  rsvps: IRSVPRepository,
 ): IEventService {
   return new EventService(events, rsvps);
 }
