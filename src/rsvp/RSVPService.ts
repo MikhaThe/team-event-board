@@ -2,7 +2,7 @@ import { IRSVPRecord, type RSVPStatus} from "./RSVP";
 import { IRSVPRepository } from "./RSVPRepository";
 import { AuthError, ValidationError, UnexpectedDependencyError } from "../auth/errors"
 import { type Result, Ok, Err} from "../lib/result"
-import { type RSVPError, RSVPNotFound, InvalidRSVP, UnexpectedError } from "../lib/error";
+import { type RSVPError, RSVPNotFound, InvalidRSVP, UnexpectedRSVPError } from "../lib/error";
 
 export interface ToggleRSVPInput {
   userId: string;
@@ -85,7 +85,7 @@ class RSVPService implements IRSVPService {
       return Ok(updateResult.value);
     }
 
-    return Err(ValidationError("Invalid RSVP state."));
+    return Err(UnexpectedRSVPError("Invalid RSVP state."));
   }
 }
 
