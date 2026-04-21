@@ -1,10 +1,12 @@
 import type { IRSVPRecord, RSVPStatus } from "./RSVP";
 import  { type Result, Ok, Err} from "../lib/result"
 import { RSVPNotFound, type RSVPError } from "../auth/errors"
+import { userInfo } from "node:os";
 
 
 export interface IRSVPRepository {
     findByEvent(eventId: string): Promise<Result<IRSVPRecord[], RSVPError>>;
+    findByUser(userId: string): Promise<Result<IRSVPRecord[], RSVPError>>
     findByUserAndEvent(userId: string, eventId: string): Promise<Result<IRSVPRecord | null, RSVPError>>;
     countGoingByEvent(eventId: string): Promise<Result<number, RSVPError>>
     create(userId: string, eventId: string, status: RSVPStatus): Promise<Result<IRSVPRecord, RSVPError>>;
@@ -29,7 +31,7 @@ export const SEED_RSVPS: IRSVPRecord[] = [
   {
     id: "rsvp-3",
     eventId: "event-3",
-    userId: "user-reader",
+    userId: "user-re ader",
     status: "going",
     createdAt: new Date(),
   },
@@ -40,6 +42,11 @@ class RSVPRepository implements IRSVPRepository {
 
     async findByEvent(eventId: string): Promise<Result<IRSVPRecord[], RSVPError>> {
         const records = this.rsvpStore.filter(r => r.eventId === eventId)
+        return Ok(records)
+    }
+
+    async findByUser(userId: string): Promise<Result<IRSVPRecord[], RSVPError>> {
+        const records = this.rsvpStore.filter(r => r.userId === userId)
         return Ok(records)
     }
 
