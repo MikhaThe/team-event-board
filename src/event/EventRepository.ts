@@ -5,6 +5,8 @@ export interface IEventRepository {
   findById(id: string): Promise<Result<Event | null, string>>
   findAll(): Promise<Result<Event[], string>>
   save(event: Event): Promise<Result<void, string>>
+  findByOrganizerId(organizerId: string): Promise<Result<Event[], string>>
+  update(event: Event): Promise<Result<Event, string>>
 }
 
 class EventRepository implements IEventRepository {
@@ -68,6 +70,19 @@ class EventRepository implements IEventRepository {
   async save(event: Event): Promise<Result<void, string>> {
     this.events.set(event.id, event)
     return { ok: true, value: undefined }
+  }
+
+  async findByOrganizerId(organizerId: string): Promise<Result<Event[], string>> {
+    const events = Array.from(this.events.values()).filter(e => e.organizerId === organizerId)
+    return { ok: true, value: events }
+  }
+
+  async update(event: Event): Promise<Result<Event, string>> {
+    if (!this.events.has(event.id)) {
+      return { ok: false, value: "Event not found." }
+    }
+    this.events.set(event.id, event)
+    return { ok: true, value: event }
   }
 }
 
