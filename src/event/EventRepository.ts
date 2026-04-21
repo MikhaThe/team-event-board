@@ -1,5 +1,7 @@
 import type { Event } from "./Event"
 import type { Result } from "../lib/result"
+import type { AuthError } from "../auth/errors"
+import { Ok } from "../lib/result"
 
 export interface IEventRepository {
   findById(id: string): Promise<Result<Event | null, string>>
@@ -10,7 +12,7 @@ export interface IEventRepository {
 }
 
 class EventRepository implements IEventRepository {
-  private events = new Map<string, Event>()
+  private events: Event[] = []
 
   constructor() {
     this.events.set("1", {
@@ -60,16 +62,43 @@ class EventRepository implements IEventRepository {
   }
 
   async findById(id: string): Promise<Result<Event | null, string>> {
-    return { ok: true, value: this.events.get(id) ?? null }
-  }
-
-  async findAll(): Promise<Result<Event[], string>> {
-    return { ok: true, value: Array.from(this.events.values()) }
+    const event = this.events.find(e => e.id == id) ?? null
+    return Ok(event) 
   }
 
   async save(event: Event): Promise<Result<void, string>> {
-    this.events.set(event.id, event)
-    return { ok: true, value: undefined }
+    this.events.push(event)
+    return Ok(undefined)
+  }
+
+  async listPublishedUpcoming(now: Date) {
+    const events = this.events.filter((e) => {
+      const start = new Date(e.startDatetime);
+
+      return e.status === "published" && start > now;
+    });
+
+    return Ok(events);
+  }
+
+  async searchPublishedUpcoming(term: string, now: Date) {
+
+    const events = this.events.filter((e) => {
+      const start = new Date(e.startDatetime);
+      if (e.status !== "published" || start <= now) {
+        return false;
+      }
+      if (!term) {
+        return true;
+      }
+      return (
+        e.title.toLowerCase().includes(term) ||
+        e.description.toLowerCase().includes(term) ||
+        e.location.toLowerCase().includes(term)
+      );
+    });
+
+    return Ok(events);
   }
 
   async findByOrganizerId(organizerId: string): Promise<Result<Event[], string>> {

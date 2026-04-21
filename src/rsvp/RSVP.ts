@@ -4,4 +4,6 @@ export interface IRSVPRecord {
   userId: string;
   eventId: string;
   status: RSVPStatus;
+  id: string;
+  createdAt: Date;
 }

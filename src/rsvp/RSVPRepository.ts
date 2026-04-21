@@ -4,14 +4,20 @@ import { RSVPNotFound, type RSVPError } from "../auth/errors"
 
 
 export interface IRSVPRepository {
+    findByEvent(eventId: string): Promise<Result<IRSVPRecord[], RSVPError>>;
     findByUserAndEvent(userId: string, eventId: string): Promise<Result<IRSVPRecord | null, RSVPError>>;
     countGoingByEvent(eventId: string): Promise<Result<number, RSVPError>>
-    create(rsvp: IRSVPRecord): Promise<Result<IRSVPRecord, RSVPError>>;
+    create(userId: string, eventId: string, status: RSVPStatus): Promise<Result<IRSVPRecord, RSVPError>>;
     updateStatus(userId: string, eventId: string, status: RSVPStatus): Promise<Result<IRSVPRecord, RSVPError>>;
 }
 
 class RSVPRepository implements IRSVPRepository {
     constructor(private readonly rsvpStore: IRSVPRecord[]) {};
+
+    async findByEvent(eventId: string): Promise<Result<IRSVPRecord[], RSVPError>> {
+        const records = this.rsvpStore.filter(r => r.eventId === eventId)
+        return Ok(records)
+    }
 
     async findByUserAndEvent(userId: string, eventId: string): Promise<Result<IRSVPRecord | null, RSVPError>> {
         const record = this.rsvpStore.find(r => r.userId == userId && r.eventId == eventId) ?? null
@@ -23,9 +29,16 @@ class RSVPRepository implements IRSVPRepository {
         return Ok(count);
     }
 
-    async create(rsvp: IRSVPRecord): Promise<Result<IRSVPRecord, RSVPError>> {
-        this.rsvpStore.push(rsvp)
-        return Ok(rsvp)
+    async create(userId: string, eventId: string, status: RSVPStatus): Promise<Result<IRSVPRecord, RSVPError>> {
+        const record = {
+            userId: userId,
+            eventId: eventId,
+            status: status,
+            id: crypto.randomUUID(),
+            createdAt: new Date()
+        }
+        this.rsvpStore.push(record)
+        return Ok(record)
     }
 
     async updateStatus(userId: string, eventId: string, status: RSVPStatus): Promise<Result<IRSVPRecord, RSVPError>> {

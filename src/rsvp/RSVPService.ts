@@ -48,11 +48,7 @@ class RSVPService implements IRSVPService {
     if (!existing) {
       const status: RSVPStatus = goingCount < capacity ? "going" : "waitlisted";
 
-      const createResult = await this.repo.create({
-        userId,
-        eventId,
-        status,
-      });
+      const createResult = await this.repo.create(userId, eventId, status);
 
       if (createResult.ok === false) {
         return Err(UnexpectedDependencyError(createResult.value.message));

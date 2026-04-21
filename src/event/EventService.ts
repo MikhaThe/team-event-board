@@ -45,12 +45,8 @@ export class EventService implements IEventService {
     private readonly eventRepository: IEventRepository = InMemoryEventRepository(),
   ) {}
 
-  async getEventDetail(
-    eventId: string,
-    viewerId?: string,
-    viewerRole?: string,
-  ): Promise<Result<Event, EventDetailError>> {
-    const result = await this.eventRepository.findById(eventId)
+  async getEventDetail(eventId: string, viewerId?: string, viewerRole?: string): Promise<Result<Event, EventDetailError>> {
+    const eventResult = await this.repository.findById(eventId)
 
     if (!result.ok) {
       return Err({
@@ -156,7 +152,44 @@ export class EventService implements IEventService {
       })
     }
 
-    return Ok(updatedEvent)
+    return Ok(undefined);
+  }
+
+  async saveEvent(event: Event): Promise<Result<void, EventDetailError>> {
+    const saveResult = await this.repository.save(event)
+    if (saveResult.ok === false) {
+      return Err({
+          name: "EventNotFound" as const,
+          message: "Event not found.",
+        })
+    }
+    return Ok(undefined)
+  }
+
+  async searchEvents(input: string | null): Promise<Result<Event[], EventDetailError>> {
+    const term = input ?? "";
+    const normalized = term.trim().toLowerCase();
+    const now = new Date();
+
+    if (!term.trim()) {
+      const result = await this.repository.listPublishedUpcoming(now);
+      if (!result.ok) {
+        return Err({
+          name: "EventNotFound" as const,
+          message: "Event not found.",
+        })
+      }
+      return Ok(result.value);
+    }
+
+    const result = await this.repository.searchPublishedUpcoming(normalized, now);
+    if (result.ok === false) {
+      return Err({
+        name: "EventNotFound" as const,
+        message: "Event not found.",
+      })
+    }
+    return Ok(result.value);
   }
 
   async publishEvent(eventId: string, organizerId: string): Promise<Result<Event, EventDetailError>> {
