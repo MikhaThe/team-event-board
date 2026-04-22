@@ -2,11 +2,7 @@ import { Err, Ok, type Result } from "../lib/result"
 import type { Event } from "./Event"
 import type { IEventRepository } from "./EventRepository"
 import { InMemoryEventRepository } from "./EventRepository"
-
-export type EventDetailError =
-  | { name: "EventNotFound"; message: string }
-  | { name: "Forbidden"; message: string }
-  | { name: "InvalidTransition"; message: string }
+import { type EventDetailError, EventNotFound, Forbidden, InvalidTransition } from "../lib/error"
 
 export type EditEventInput = {
   title?: string
@@ -50,10 +46,7 @@ export class EventService implements IEventService {
     const result = await this.repository.findById(eventId)
 
     if (!result.ok) {
-      return Err({
-        name: "EventNotFound" as const,
-        message: "Event not found.",
-      })
+      return Err(EventNotFound("Event not found."))
     }
 
     const event = result.value
