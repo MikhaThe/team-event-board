@@ -43,5 +43,9 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const organizerService = CreateOrganizerService(eventRepository, rsvpRepository);
   const organizerController = CreateOrganizerController(eventService, organizerService, resolvedLogger);
 
-  return CreateApp(eventController, eventListController, authController, resolvedLogger, rsvpController, dashboardController);
+  // User dashboard wiring
+  const dashboardService = CreateDashboardService(rsvpRepository, eventRepository);
+  const dashboardController = CreateDashboardController(dashboardService, resolvedLogger);
+
+  return CreateApp(eventController, eventListController, authController, organizerController, resolvedLogger, rsvpController, dashboardController);
 }

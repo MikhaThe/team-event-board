@@ -22,7 +22,7 @@ import { IEventController } from "./event/EventController";
 import { IEventListController } from "./event/EventListController";
 import { IRSVPController } from "./rsvp/RSVPController";
 import type { IEventController as IOrganizerController } from "./organizerdashboard/OrganizerDashboard";
-import { listEvents } from "./event/EventListController";
+import type { IDashboardController } from "./dashboard/DashboardController";
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -409,7 +409,7 @@ export function CreateApp(
   organizerController: IOrganizerController,
   logger: ILoggingService,
   rsvpController: IRSVPController,
-  dashboardController: IDashboardController
+  dashboardController: IDashboardController,
 ): IApp {
-  return new ExpressApp(eventController, eventlistController, authController, logger, rsvpController, dashboardController);
+  return new ExpressApp(eventController, eventlistController, authController, organizerController, logger, rsvpController, dashboardController);
 }

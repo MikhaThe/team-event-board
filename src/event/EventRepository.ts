@@ -9,13 +9,15 @@ export interface IEventRepository {
   save(event: Event): Promise<Result<void, string>>
   findByOrganizerId(organizerId: string): Promise<Result<Event[], string>>
   update(event: Event): Promise<Result<Event, string>>
+  listPublishedUpcoming(now: Date): Promise<Result<Event[], string>>
+  searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], string>>
 }
 
 class EventRepository implements IEventRepository {
   private events: Event[] = []
 
   constructor() {
-    this.events.set("1", {
+    this.events.push({
       id: "1",
       title: "Test Event",
       description: "This is a test event for Feature 2.",
@@ -30,7 +32,7 @@ class EventRepository implements IEventRepository {
       capacity: 20,
     })
 
-    this.events.set("2", {
+    this.events.push({
       id: "2",
       title: "Music Night",
       description: "Live music event on campus.",
@@ -45,7 +47,7 @@ class EventRepository implements IEventRepository {
       capacity: 50,
     })
 
-    this.events.set("3", {
+    this.events.push({
       id: "3",
       title: "Private Draft Event",
       description: "This is a draft event.",
@@ -62,8 +64,12 @@ class EventRepository implements IEventRepository {
   }
 
   async findById(id: string): Promise<Result<Event | null, string>> {
-    const event = this.events.find(e => e.id == id) ?? null
-    return Ok(event) 
+    const event = this.events.find(e => e.id === id) ?? null
+    return Ok(event)
+  }
+
+  async findAll(): Promise<Result<Event[], string>> {
+    return Ok([...this.events])
   }
 
   async save(event: Event): Promise<Result<void, string>> {
@@ -71,46 +77,39 @@ class EventRepository implements IEventRepository {
     return Ok(undefined)
   }
 
-  async listPublishedUpcoming(now: Date) {
+  async listPublishedUpcoming(now: Date): Promise<Result<Event[], string>> {
     const events = this.events.filter((e) => {
-      const start = new Date(e.startDatetime);
-
-      return e.status === "published" && start > now;
-    });
-
-    return Ok(events);
+      const start = new Date(e.startDatetime)
+      return e.status === "published" && start > now
+    })
+    return Ok(events)
   }
 
-  async searchPublishedUpcoming(term: string, now: Date) {
-
+  async searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], string>> {
     const events = this.events.filter((e) => {
-      const start = new Date(e.startDatetime);
-      if (e.status !== "published" || start <= now) {
-        return false;
-      }
-      if (!term) {
-        return true;
-      }
+      const start = new Date(e.startDatetime)
+      if (e.status !== "published" || start <= now) return false
+      if (!term) return true
       return (
         e.title.toLowerCase().includes(term) ||
         e.description.toLowerCase().includes(term) ||
         e.location.toLowerCase().includes(term)
-      );
-    });
-
-    return Ok(events);
+      )
+    })
+    return Ok(events)
   }
 
   async findByOrganizerId(organizerId: string): Promise<Result<Event[], string>> {
-    const events = Array.from(this.events.values()).filter(e => e.organizerId === organizerId)
-    return { ok: true, value: events }
+    const events = this.events.filter(e => e.organizerId === organizerId)
+    return Ok(events)
   }
 
   async update(event: Event): Promise<Result<Event, string>> {
-    if (!this.events.has(event.id)) {
+    const index = this.events.findIndex(e => e.id === event.id)
+    if (index === -1) {
       return { ok: false, value: "Event not found." }
     }
-    this.events.set(event.id, event)
+    this.events[index] = event
     return { ok: true, value: event }
   }
 }

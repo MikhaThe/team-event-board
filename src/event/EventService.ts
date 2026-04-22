@@ -36,6 +36,7 @@ export interface IEventService {
     viewerRole?: string,
   ): Promise<Result<Event, EventDetailError>>
 
+  searchEvents(input: string | null): Promise<Result<Event[], EventDetailError>>
   publishEvent(eventId: string, organizerId: string, isAdmin?: boolean): Promise<Result<Event, EventDetailError>>
   cancelEvent(eventId: string, organizerId: string, isAdmin?: boolean): Promise<Result<Event, EventDetailError>>
 }
@@ -46,16 +47,16 @@ export class EventService implements IEventService {
   ) {}
 
   async getEventDetail(eventId: string, viewerId?: string, viewerRole?: string): Promise<Result<Event, EventDetailError>> {
-    const eventResult = await this.repository.findById(eventId)
+    const eventResult = await this.eventRepository.findById(eventId)
 
-    if (!result.ok) {
+    if (!eventResult.ok) {
       return Err({
         name: "EventNotFound" as const,
         message: "Event not found.",
       })
     }
 
-    const event = result.value
+    const event = eventResult.value
 
     if (!event) {
       return Err({
@@ -152,11 +153,11 @@ export class EventService implements IEventService {
       })
     }
 
-    return Ok(undefined);
+    return Ok(updatedEvent);
   }
 
   async saveEvent(event: Event): Promise<Result<void, EventDetailError>> {
-    const saveResult = await this.repository.save(event)
+    const saveResult = await this.eventRepository.save(event)
     if (saveResult.ok === false) {
       return Err({
           name: "EventNotFound" as const,
@@ -172,7 +173,7 @@ export class EventService implements IEventService {
     const now = new Date();
 
     if (!term.trim()) {
-      const result = await this.repository.listPublishedUpcoming(now);
+      const result = await this.eventRepository.listPublishedUpcoming(now);
       if (!result.ok) {
         return Err({
           name: "EventNotFound" as const,
@@ -182,7 +183,7 @@ export class EventService implements IEventService {
       return Ok(result.value);
     }
 
-    const result = await this.repository.searchPublishedUpcoming(normalized, now);
+    const result = await this.eventRepository.searchPublishedUpcoming(normalized, now);
     if (result.ok === false) {
       return Err({
         name: "EventNotFound" as const,
