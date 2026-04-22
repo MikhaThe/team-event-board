@@ -1,6 +1,5 @@
 import { IRSVPRecord, type RSVPStatus} from "./RSVP";
 import { IRSVPRepository } from "./RSVPRepository";
-import { AuthError, ValidationError, UnexpectedDependencyError } from "../auth/errors"
 import { type Result, Ok, Err} from "../lib/result"
 import { type RSVPError, RSVPNotFound, InvalidRSVP, UnexpectedRSVPError } from "../lib/error";
 

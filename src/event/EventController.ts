@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
-import type { IEventService, EventDetailError } from "./EventService";
+import type { IEventService } from "./EventService";
 import {
   getAuthenticatedUser,
   touchAppSession,
   type AppSessionStore,
 } from "../session/AppSession";
 import type { Event } from "./Event";
+import type { EventDetailError } from "../lib/error";
 import { ILoggingService } from "../service/LoggingService";
 
 export interface IEventController {
