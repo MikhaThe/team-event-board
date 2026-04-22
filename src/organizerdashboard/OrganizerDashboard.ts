@@ -1,8 +1,9 @@
 import type { Response } from "express";
-import type { IEventService } from "./EventService";
+import type { IEventService } from "../event/EventService";
+import type { IOrganizerService } from "./OrganizerService";
 import type { ILoggingService } from "../service/LoggingService";
 import type { IAppBrowserSession } from "../session/AppSession";
-import type { IOrganizerDashboard } from "./Event";
+import type { IOrganizerDashboard } from "./OrganizerEvents";
 
 export interface IEventController {
   showOrganizerDashboard(
@@ -16,26 +17,28 @@ export interface IEventController {
     eventId: string,
     organizerId: string,
     session: IAppBrowserSession,
+    isHtmx?: boolean,
   ): Promise<void>;
   cancelEventFromForm(
     res: Response,
     eventId: string,
     organizerId: string,
     session: IAppBrowserSession,
+    isHtmx?: boolean,
   ): Promise<void>;
 }
 
-class EventController implements IEventController {
+class OrganizerController implements IEventController {
   constructor(
-    private readonly service: IEventService,
+    private readonly eventService: IEventService,
+    private readonly organizerService: IOrganizerService,
     private readonly logger: ILoggingService,
   ) {}
 
   private mapErrorStatus(errorName: string): number {
     if (errorName === "EventNotFound") return 404;
-    if (errorName === "Unauthorized") return 403;
+    if (errorName === "Forbidden") return 403;
     if (errorName === "InvalidTransition") return 409;
-    if (errorName === "ValidationError") return 400;
     return 500;
   }
 
@@ -44,19 +47,27 @@ class EventController implements IEventController {
     organizerId: string,
     session: IAppBrowserSession,
     pageError: string | null = null,
+    isHtmx = false,
   ): Promise<void> {
-    const result = await this.service.getOrganizerDashboard(organizerId);
+    const isAdmin = session.authenticatedUser?.role === "admin";
+    const result = await this.organizerService.getOrganizerDashboard(organizerId, isAdmin);
 
-    if (result.ok === false) {
-      res.status(500).render("events/organizer-dashboard", {
+    const emptyDashboard: IOrganizerDashboard = { draft: [], published: [], cancelled: [], past: [] };
+
+    if (!result.ok) {
+      const view = isHtmx ? "partials/dashboard-sections" : "events/organizer-dashboard";
+      res.status(500).render(view, {
+        layout: isHtmx ? false : undefined,
         session,
-        pageError: pageError ?? result.value.message,
-        dashboard: { draft: [], published: [], cancelled: [], past: [] } as IOrganizerDashboard,
+        pageError: pageError ?? result.value,
+        dashboard: emptyDashboard,
       });
       return;
     }
 
-    res.render("events/organizer-dashboard", {
+    const view = isHtmx ? "partials/dashboard-sections" : "events/organizer-dashboard";
+    res.render(view, {
+      layout: isHtmx ? false : undefined,
       session,
       pageError,
       dashboard: result.value,
@@ -69,7 +80,7 @@ class EventController implements IEventController {
     session: IAppBrowserSession,
     pageError: string | null = null,
   ): Promise<void> {
-    await this.renderDashboard(res, organizerId, session, pageError);
+    await this.renderDashboard(res, organizerId, session, pageError, false);
   }
 
   async publishEventFromForm(
@@ -77,20 +88,26 @@ class EventController implements IEventController {
     eventId: string,
     organizerId: string,
     session: IAppBrowserSession,
+    isHtmx = false,
   ): Promise<void> {
-    const result = await this.service.publishEvent(eventId, organizerId);
+    const isAdmin = session.authenticatedUser?.role === "admin";
+    const result = await this.eventService.publishEvent(eventId, organizerId, isAdmin);
 
-    if (result.ok === false) {
+    if (!result.ok) {
       const status = this.mapErrorStatus(result.value.name);
       const log = status >= 500 ? this.logger.error : this.logger.warn;
       log.call(this.logger, `Publish event failed: ${result.value.message}`);
       res.status(status);
-      await this.renderDashboard(res, organizerId, session, result.value.message);
+      await this.renderDashboard(res, organizerId, session, result.value.message, isHtmx);
       return;
     }
 
     this.logger.info(`Published event ${result.value.id} by organizer ${organizerId}`);
-    res.redirect("/organizer/dashboard");
+    if (isHtmx) {
+      await this.renderDashboard(res, organizerId, session, null, true);
+    } else {
+      res.redirect("/organizer/dashboard");
+    }
   }
 
   async cancelEventFromForm(
@@ -98,26 +115,33 @@ class EventController implements IEventController {
     eventId: string,
     organizerId: string,
     session: IAppBrowserSession,
+    isHtmx = false,
   ): Promise<void> {
-    const result = await this.service.cancelEvent(eventId, organizerId);
+    const isAdmin = session.authenticatedUser?.role === "admin";
+    const result = await this.eventService.cancelEvent(eventId, organizerId, isAdmin);
 
-    if (result.ok === false) {
+    if (!result.ok) {
       const status = this.mapErrorStatus(result.value.name);
       const log = status >= 500 ? this.logger.error : this.logger.warn;
       log.call(this.logger, `Cancel event failed: ${result.value.message}`);
       res.status(status);
-      await this.renderDashboard(res, organizerId, session, result.value.message);
+      await this.renderDashboard(res, organizerId, session, result.value.message, isHtmx);
       return;
     }
 
     this.logger.info(`Cancelled event ${result.value.id} by organizer ${organizerId}`);
-    res.redirect("/organizer/dashboard");
+    if (isHtmx) {
+      await this.renderDashboard(res, organizerId, session, null, true);
+    } else {
+      res.redirect("/organizer/dashboard");
+    }
   }
 }
 
-export function CreateEventController(
-  service: IEventService,
+export function CreateOrganizerController(
+  eventService: IEventService,
+  organizerService: IOrganizerService,
   logger: ILoggingService,
 ): IEventController {
-  return new EventController(service, logger);
+  return new OrganizerController(eventService, organizerService, logger);
 }

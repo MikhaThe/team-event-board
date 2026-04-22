@@ -7,8 +7,10 @@ export interface IEventRepository {
   findById(id: string): Promise<Result<Event | null, string>>
   findAll(): Promise<Result<Event[], string>>
   save(event: Event): Promise<Result<void, string>>
-  searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], AuthError>>;
-  listPublishedUpcoming(now: Date): Promise<Result<Event[], AuthError>>;
+  findByOrganizerId(organizerId: string): Promise<Result<Event[], string>>
+  update(event: Event): Promise<Result<Event, string>>
+  listPublishedUpcoming(now: Date): Promise<Result<Event[], string>>
+  searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], string>>
 }
 
 class EventRepository implements IEventRepository {
@@ -22,8 +24,8 @@ class EventRepository implements IEventRepository {
       location: "UMass Amherst",
       category: "School",
       status: "published",
-      organizerId: "user1",
-      organizerName: "Una User",
+      organizerId: "user-staff",
+      organizerName: "Sam Staff",
       startDatetime: "2026-04-20T10:00:00",
       endDatetime: "2026-04-20T12:00:00",
       attendeeCount: 10,
@@ -37,8 +39,8 @@ class EventRepository implements IEventRepository {
       location: "Campus Center",
       category: "Music",
       status: "published",
-      organizerId: "user2",
-      organizerName: "Sam Staff",
+      organizerId: "user-admin",
+      organizerName: "Avery Admin",
       startDatetime: "2026-04-22T18:00:00",
       endDatetime: "2026-04-22T20:00:00",
       attendeeCount: 30,
@@ -52,8 +54,8 @@ class EventRepository implements IEventRepository {
       location: "Hidden Room",
       category: "School",
       status: "draft",
-      organizerId: "user1",
-      organizerName: "Una User",
+      organizerId: "user-staff",
+      organizerName: "Sam Staff",
       startDatetime: "2026-04-25T09:00:00",
       endDatetime: "2026-04-25T10:00:00",
       attendeeCount: 0,
@@ -62,12 +64,12 @@ class EventRepository implements IEventRepository {
   }
 
   async findById(id: string): Promise<Result<Event | null, string>> {
-    const event = this.events.find(e => e.id == id) ?? null
-    return Ok(event) 
+    const event = this.events.find(e => e.id === id) ?? null
+    return Ok(event)
   }
 
   async findAll(): Promise<Result<Event[], string>> {
-    return Ok(this.events)
+    return Ok([...this.events])
   }
 
   async save(event: Event): Promise<Result<void, string>> {
@@ -80,34 +82,40 @@ class EventRepository implements IEventRepository {
     return Ok(undefined)
   }
 
-  async listPublishedUpcoming(now: Date) {
+  async listPublishedUpcoming(now: Date): Promise<Result<Event[], string>> {
     const events = this.events.filter((e) => {
-      const start = new Date(e.startDatetime);
-
-      return e.status === "published" && start > now;
-    });
-
-    return Ok(events);
+      const start = new Date(e.startDatetime)
+      return e.status === "published" && start > now
+    })
+    return Ok(events)
   }
 
-  async searchPublishedUpcoming(term: string, now: Date) {
-
+  async searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], string>> {
     const events = this.events.filter((e) => {
-      const start = new Date(e.startDatetime);
-      if (e.status !== "published" || start <= now) {
-        return false;
-      }
-      if (!term) {
-        return true;
-      }
+      const start = new Date(e.startDatetime)
+      if (e.status !== "published" || start <= now) return false
+      if (!term) return true
       return (
         e.title.toLowerCase().includes(term) ||
         e.description.toLowerCase().includes(term) ||
         e.location.toLowerCase().includes(term)
-      );
-    });
+      )
+    })
+    return Ok(events)
+  }
 
-    return Ok(events);
+  async findByOrganizerId(organizerId: string): Promise<Result<Event[], string>> {
+    const events = this.events.filter(e => e.organizerId === organizerId)
+    return Ok(events)
+  }
+
+  async update(event: Event): Promise<Result<Event, string>> {
+    const index = this.events.findIndex(e => e.id === event.id)
+    if (index === -1) {
+      return { ok: false, value: "Event not found." }
+    }
+    this.events[index] = event
+    return { ok: true, value: event }
   }
 }
 

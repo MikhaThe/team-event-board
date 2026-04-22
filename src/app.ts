@@ -21,7 +21,8 @@ import { ILoggingService } from "./service/LoggingService";
 import { IEventController } from "./event/EventController";
 import { IEventListController } from "./event/EventListController";
 import { IRSVPController } from "./rsvp/RSVPController";
-import { IDashboardController } from "./dashboard/DashboardController";
+import type { IEventController as IOrganizerController } from "./organizerdashboard/OrganizerDashboard";
+import type { IDashboardController } from "./dashboard/DashboardController";
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -406,7 +407,7 @@ export function CreateApp(
   authController: IAuthController,
   logger: ILoggingService,
   rsvpController: IRSVPController,
-  dashboardController: IDashboardController
+  dashboardController: IDashboardController,
 ): IApp {
   return new ExpressApp(eventController, eventlistController, authController, logger, rsvpController, dashboardController);
 }
