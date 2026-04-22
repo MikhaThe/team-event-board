@@ -42,7 +42,6 @@ class ExpressApp implements IApp {
     private readonly eventController: IEventController,
     private readonly eventlistController: IEventListController,
     private readonly authController: IAuthController,
-    private readonly organizerController: IOrganizerController,
     private readonly logger: ILoggingService,
     private readonly rsvpController: IRSVPController,
     private readonly dashboardController: IDashboardController
@@ -405,7 +404,6 @@ export function CreateApp(
   eventController: IEventController,
   eventlistController: IEventListController,
   authController: IAuthController,
-  organizerController: IOrganizerController,
   logger: ILoggingService,
   rsvpController: IRSVPController,
   dashboardController: IDashboardController

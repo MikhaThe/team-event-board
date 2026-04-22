@@ -7,7 +7,7 @@ import {
 } from "../session/AppSession";
 import type { Event } from "./Event";
 import { ILoggingService } from "../service/LoggingService";
-import { touchAppSession } from "../session/AppSession";
+
 
 export interface IEventController {
   showEvent(req: Request, res: Response): Promise<void>;
