@@ -170,7 +170,9 @@ export class EventService implements IEventService {
 
     const updated: Event = { ...event, status: "published" }
     const updateResult = await this.repository.update(updated)
-    if (!updateResult.ok) return Err(EventNotFound(updateResult.value))
+    if (!updateResult.ok) {
+      return updateResult
+    }
     return Ok(updateResult.value)
   }
 
@@ -185,7 +187,9 @@ export class EventService implements IEventService {
 
     const updated: Event = { ...event, status: "cancelled" }
     const updateResult = await this.repository.update(updated)
-    if (!updateResult.ok) return Err(EventNotFound(updateResult.value))
+    if (!updateResult.ok) {
+      return updateResult
+    }
     return Ok(updateResult.value)
   }
 }
