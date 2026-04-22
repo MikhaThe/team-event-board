@@ -28,6 +28,13 @@ function mockAuthSession(role = "user", userId = "user1") {
   };
 }
 
+jest.mock("../../src/session/AppSession", () => ({
+  getAuthenticatedUser: jest.fn(() => ({
+    userId: "user1",
+    role: "user",
+  })),
+}));
+
 describe("EventController - updateEvent ONLY", () => {
   let mockService: jest.Mocked<IEventService>;
   let app: express.Express;
@@ -43,7 +50,8 @@ describe("EventController - updateEvent ONLY", () => {
 
     const controller = CreateEventController(mockService, mockLogger as any);
 
-    app = express();
+    app = express();  
+    app.use(express.json());
     app.use(bodyParser.urlencoded({ extended: false }));
     app.use((req: any, _res, next) => {
         req.session = {}; // doesn't matter now
