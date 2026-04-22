@@ -40,11 +40,11 @@ export interface IEventService {
 
 export class EventService implements IEventService {
   constructor(
-    private readonly eventRepository: IEventRepository = InMemoryEventRepository(),
+    private readonly repository: IEventRepository = InMemoryEventRepository(),
   ) {}
 
   async getEventDetail(eventId: string, viewerId?: string, viewerRole?: string): Promise<Result<Event, EventDetailError>> {
-    const eventResult = await this.repository.findById(eventId)
+    const result = await this.repository.findById(eventId)
 
     if (!result.ok) {
       return Err({
@@ -79,7 +79,7 @@ export class EventService implements IEventService {
     category?: string,
     date?: string,
   ): Promise<Result<Event[], string>> {
-    const result = await this.eventRepository.findAll()
+    const result = await this.repository.findAll()
 
     if (!result.ok) {
       return Err("Unable to retrieve events.")
@@ -107,8 +107,8 @@ export class EventService implements IEventService {
     updates: EditEventInput,
     viewerId?: string,
     viewerRole?: string,
-  ): Promise<Result<Event, EventDetailError>> {
-    const result = await this.eventRepository.findById(eventId)
+  ): Promise<Result<void, EventDetailError>> {
+    const result = await this.repository.findById(eventId)
 
     if (!result.ok) {
       return Err({
@@ -141,7 +141,7 @@ export class EventService implements IEventService {
       ...updates,
     }
 
-    const saveResult = await this.eventRepository.save(updatedEvent)
+    const saveResult = await this.repository.save(updatedEvent)
 
     if (!saveResult.ok) {
       return Err({
