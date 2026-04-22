@@ -2,6 +2,10 @@ export type EventDetailError =
   | { name: "EventNotFound"; message: string }
   | { name: "Forbidden"; message: string }
 
+export type FilterError =
+  | { name: "InvalidCategory"; message: string }
+  | { name: "InvalidDate"; message: string }
+
 export type RSVPError =
   | { name: "RSVP Not Found"; message: string }
   | { name: "Invalid RSVP"; message: string }
@@ -19,5 +23,25 @@ export const InvalidRSVP = (message: string): RSVPError => ({
 
 export const UnexpectedRSVPError = (message: string): RSVPError => ({
   name: "Unexpected RSVP Error",
+  message,
+})
+
+export const EventNotFound = (message: string): EventDetailError => ({
+  name: "EventNotFound",
+  message,
+})
+
+export const Forbidden = (message: string): EventDetailError => ({
+  name: "Forbidden",
+  message,
+})
+
+export const InvalidCategory = (message: string): FilterError => ({
+  name: "InvalidCategory",
+  message,
+})
+
+export const InvalidDate = (message: string): FilterError => ({
+  name: "InvalidDate",
   message,
 })

@@ -13,6 +13,7 @@ export interface IEventController {
   showEditEvent(req: Request, res: Response): Promise<void>;
   updateEvent(req: Request, res: Response): Promise<void>;
   searchEvents(req: Request, res: Response): Promise<void>;
+  listEvents(req: Request, res: Response): Promise<void>;
 }
 
 class EventController implements IEventController {
@@ -20,6 +21,10 @@ class EventController implements IEventController {
     private readonly service: IEventService,
     private readonly logger: ILoggingService
   ) {}
+
+  private isHtmx(req: Request): boolean {
+    return req.get("HX-Request") === "true";
+  }
 
   async showEvent(req: Request, res: Response): Promise<void> {
     const eventId = req.params.id as string;
@@ -35,16 +40,16 @@ class EventController implements IEventController {
       const error = result.value as EventDetailError;
 
       if (error.name === "EventNotFound") {
-        res.status(404).send(error.message);
+        res.status(404).render("partials/error", { message: error.message, layout: false });
         return;
       }
 
       if (error.name === "Forbidden") {
-        res.status(403).send(error.message);
+        res.status(403).render("partials/error", { message: error.message, layout: false });
         return;
       }
 
-      res.status(400).send("Unknown error.");
+      res.status(400).render("partials/error", { message: "Unknown error.", layout: false });
       return;
     }
 
@@ -71,16 +76,16 @@ class EventController implements IEventController {
       const error = result.value as EventDetailError;
 
       if (error.name === "EventNotFound") {
-        res.status(404).send(error.message);
+        res.status(404).render("partials/error", { message: error.message, layout: false });
         return;
       }
 
       if (error.name === "Forbidden") {
-        res.status(403).send(error.message);
+        res.status(403).render("partials/error", { message: error.message, layout: false });
         return;
       }
 
-      res.status(400).send("Unknown error.");
+      res.status(400).render("partials/error", { message: "Unknown error.", layout: false });
       return;
     }
 
@@ -96,7 +101,6 @@ class EventController implements IEventController {
   async updateEvent(req: Request, res: Response): Promise<void> {
     const eventId = req.params.id as string;
     const user = getAuthenticatedUser(req.session);
-
     const updates = req.body;
 
     const result = await this.service.editEvent(
@@ -110,16 +114,16 @@ class EventController implements IEventController {
       const error = result.value as EventDetailError;
 
       if (error.name === "EventNotFound") {
-        res.status(404).send(error.message);
+        res.status(404).render("partials/error", { message: error.message, layout: false });
         return;
       }
 
       if (error.name === "Forbidden") {
-        res.status(403).send(error.message);
+        res.status(403).render("partials/error", { message: error.message, layout: false });
         return;
       }
 
-      res.status(400).send("Unknown error.");
+      res.status(400).render("partials/error", { message: "Unknown error.", layout: false });
       return;
     }
 
@@ -130,29 +134,47 @@ class EventController implements IEventController {
     );
 
     if (!eventResult.ok) {
-      const error = eventResult.value as EventDetailError;
-
-      if (error.name === "EventNotFound") {
-        res.status(404).send(error.message);
-        return;
-      }
-
-      if (error.name === "Forbidden") {
-        res.status(403).send(error.message);
-        return;
-      }
-
-      res.status(400).send("Unknown error.");
+      res.status(500).render("partials/error", { message: "Could not reload event.", layout: false });
       return;
     }
-
 
     res.render("eventDetail", {
       event: eventResult.value,
       layout: false,
-    })
+    });
   }
-  
+
+  async listEvents(req: Request, res: Response): Promise<void> {
+    const category =
+      typeof req.query.category === "string" ? req.query.category : undefined;
+    const date =
+      typeof req.query.date === "string" ? req.query.date : undefined;
+
+    const result = await this.service.getFilteredEvents(category, date);
+
+    if (!result.ok) {
+      res.status(500).render("partials/error", { message: result.value, layout: false });
+      return;
+    }
+
+    const browserSession = touchAppSession(req.session as AppSessionStore);
+
+    if (this.isHtmx(req)) {
+      res.render("partials/event-list", {
+        events: result.value,
+        layout: false,
+      });
+      return;
+    }
+
+    res.render("eventList", {
+      events: result.value,
+      selectedCategory: category ?? "",
+      selectedDate: date ?? "",
+      session: browserSession,
+    });
+  }
+
   async searchEvents(req: Request, res: Response): Promise<void> {
     const termRaw = req.query.q;
     const term = Array.isArray(termRaw) ? termRaw[0] : termRaw;
@@ -161,21 +183,20 @@ class EventController implements IEventController {
 
     if (!result.ok) {
       const error = result.value as EventDetailError;
-      
+
       if (error.name === "EventNotFound") {
-        res.status(404).send(error.message);
+        res.status(404).render("partials/error", { message: error.message, layout: false });
         return;
       }
 
-      if (error.name === "Forbidden") {
-        res.status(403).send(error.message);
-        return;
-      }
-
-      res.status(400).send("Unknown error.");
+      res.status(400).render("partials/error", { message: "Unknown error.", layout: false });
       return;
     }
-    return;
+
+    res.render("partials/event-list", {
+      events: result.value,
+      layout: false,
+    });
   }
 }
 
