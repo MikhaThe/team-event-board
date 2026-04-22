@@ -1,7 +1,6 @@
 import type { IRSVPRecord, RSVPStatus } from "./RSVP";
 import  { type Result, Ok, Err} from "../lib/result"
-import { RSVPNotFound, type RSVPError } from "../auth/errors"
-import { userInfo } from "node:os";
+import { RSVPNotFound, type RSVPError } from "../lib/error"
 
 
 export interface IRSVPRepository {
