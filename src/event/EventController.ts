@@ -8,7 +8,6 @@ import {
 import type { Event } from "./Event";
 import { ILoggingService } from "../service/LoggingService";
 
-
 export interface IEventController {
   showEvent(req: Request, res: Response): Promise<void>;
   showEditEvent(req: Request, res: Response): Promise<void>;

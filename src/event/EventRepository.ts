@@ -15,7 +15,7 @@ class EventRepository implements IEventRepository {
   private events: Event[] = []
 
   constructor() {
-    this.events.push( {
+    this.events.push({
       id: "1",
       title: "Test Event",
       description: "This is a test event for Feature 2.",
@@ -30,7 +30,7 @@ class EventRepository implements IEventRepository {
       capacity: 20,
     })
 
-    this.events.push( {
+    this.events.push({
       id: "2",
       title: "Music Night",
       description: "Live music event on campus.",
@@ -45,7 +45,7 @@ class EventRepository implements IEventRepository {
       capacity: 50,
     })
 
-    this.events.push( {
+    this.events.push({
       id: "3",
       title: "Private Draft Event",
       description: "This is a draft event.",
