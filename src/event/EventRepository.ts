@@ -71,7 +71,12 @@ class EventRepository implements IEventRepository {
   }
 
   async save(event: Event): Promise<Result<void, string>> {
-    this.events.push(event)
+    const index = this.events.findIndex(e => e.id === event.id)
+    if (index !== -1) {
+      this.events[index] = event
+    } else {
+      this.events.push(event)
+    }
     return Ok(undefined)
   }
 

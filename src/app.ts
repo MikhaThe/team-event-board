@@ -319,47 +319,47 @@ class ExpressApp implements IApp {
       }),
     );
 
-    // ── Organizer event dashboard (Feature 8) ────────────────────────
+    // // ── Organizer event dashboard (Feature 8) ────────────────────────
 
-    this.app.get(
-      "/organizer/dashboard",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
+    // this.app.get(
+    //   "/organizer/dashboard",
+    //   asyncHandler(async (req, res) => {
+    //     if (!this.requireAuthenticated(req, res)) return;
 
-        const store = sessionStore(req);
-        const session = recordPageView(store);
-        const currentUser = getAuthenticatedUser(store);
-        await this.organizerController.showOrganizerDashboard(res, currentUser!.userId, session);
-      }),
-    );
+    //     const store = sessionStore(req);
+    //     const session = recordPageView(store);
+    //     const currentUser = getAuthenticatedUser(store);
+    //     await this.organizerController.showOrganizerDashboard(res, currentUser!.userId, session);
+    //   }),
+    // );
 
-    // ── Event publish / cancel (Feature 5) ───────────────────────────
+    // // ── Event publish / cancel (Feature 5) ───────────────────────────
 
-    this.app.post(
-      "/events/:id/publish",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
+    // this.app.post(
+    //   "/events/:id/publish",
+    //   asyncHandler(async (req, res) => {
+    //     if (!this.requireAuthenticated(req, res)) return;
 
-        const store = sessionStore(req);
-        const session = touchAppSession(store);
-        const currentUser = getAuthenticatedUser(store);
-        const eventId = typeof req.params.id === "string" ? req.params.id : "";
-        await this.organizerController.publishEventFromForm(res, eventId, currentUser!.userId, session);
-      }),
-    );
+    //     const store = sessionStore(req);
+    //     const session = touchAppSession(store);
+    //     const currentUser = getAuthenticatedUser(store);
+    //     const eventId = typeof req.params.id === "string" ? req.params.id : "";
+    //     await this.organizerController.publishEventFromForm(res, eventId, currentUser!.userId, session);
+    //   }),
+    // );
 
-    this.app.post(
-      "/events/:id/cancel",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
+    // this.app.post(
+    //   "/events/:id/cancel",
+    //   asyncHandler(async (req, res) => {
+    //     if (!this.requireAuthenticated(req, res)) return;
 
-        const store = sessionStore(req);
-        const session = touchAppSession(store);
-        const currentUser = getAuthenticatedUser(store);
-        const eventId = typeof req.params.id === "string" ? req.params.id : "";
-        await this.organizerController.cancelEventFromForm(res, eventId, currentUser!.userId, session);
-      }),
-    );
+    //     const store = sessionStore(req);
+    //     const session = touchAppSession(store);
+    //     const currentUser = getAuthenticatedUser(store);
+    //     const eventId = typeof req.params.id === "string" ? req.params.id : "";
+    //     await this.organizerController.cancelEventFromForm(res, eventId, currentUser!.userId, session);
+    //   }),
+    // );
 
     // ── RSVP Dashboard route (Feature 7) ───────────────────────────────
     this.app.get(

@@ -123,7 +123,9 @@ class EventController implements IEventController {
       return;
     }
 
-    res.redirect(`/events/${eventId}`);
+    res.render("eventDetail", {
+      event: result.value,
+    })
   }
   
   async searchEvents(req: Request, res: Response): Promise<void> {
