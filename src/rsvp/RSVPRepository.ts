@@ -8,6 +8,7 @@ export interface IRSVPRepository {
     findByEvent(eventId: string): Promise<Result<IRSVPRecord[], RSVPError>>;
     findByUser(userId: string): Promise<Result<IRSVPRecord[], RSVPError>>
     findByUserAndEvent(userId: string, eventId: string): Promise<Result<IRSVPRecord | null, RSVPError>>;
+    findByUser(userId: string): Promise<Result<IRSVPRecord[], RSVPError>>;
     countGoingByEvent(eventId: string): Promise<Result<number, RSVPError>>
     create(userId: string, eventId: string, status: RSVPStatus): Promise<Result<IRSVPRecord, RSVPError>>;
     updateStatus(userId: string, eventId: string, status: RSVPStatus): Promise<Result<IRSVPRecord, RSVPError>>;
