@@ -1,58 +1,28 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Dashboard</title>
-    <link rel="stylesheet" href="/styles.css" />
-  </head>
-  <body>
-    <h1>Your Dashboard</h1>
+<div class="space-y-6">
 
-    <!-- Upcoming Events -->
-    <section>
-      <h2>Upcoming Events</h2>
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-bold text-slate-900">Your Dashboard</h1>
 
-      <% if (dashboard.upcoming.length === 0) { %>
-        <p>No upcoming events.</p>
-      <% } else { %>
-        <ul>
-          <% dashboard.upcoming.forEach(event => { %>
-            <li>
-              <h3><%= event.title %></h3>
-              <p>
-                <strong>When:</strong>
-                <%= new Date(event.startDatetime).toLocaleString() %>
-              </p>
-              <p><strong>Location:</strong> <%= event.location %></p>
-              <p><strong>Status:</strong> <%= event.status %></p>
-            </li>
-          <% }) %>
-        </ul>
-      <% } %>
-    </section>
+    <button
+      hx-get="/dashboard"
+      hx-target="#dashboard-content"
+      hx-swap="outerHTML"
+      class="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+    >
+      Refresh
+    </button>
+  </div>
 
-    <!-- Past Events -->
-    <section>
-      <h2>Past Events</h2>
+  <!-- Dashboard Content (HTMX Target) -->
+  <div
+    id="dashboard-content"
+    hx-get="/dashboard"
+    hx-trigger="load, every 30s"
+    hx-swap="outerHTML"
+    class="space-y-6"
+  >
+    <%- include("partials/dashboardContent") %>
+  </div>
 
-      <% if (dashboard.past.length === 0) { %>
-        <p>No past events.</p>
-      <% } else { %>
-        <ul>
-          <% dashboard.past.forEach(event => { %>
-            <li>
-              <h3><%= event.title %></h3>
-              <p>
-                <strong>When:</strong>
-                <%= new Date(event.startDatetime).toLocaleString() %>
-              </p>
-              <p><strong>Location:</strong> <%= event.location %></p>
-              <p><strong>Status:</strong> <%= event.status %></p>
-            </li>
-          <% }) %>
-        </ul>
-      <% } %>
-    </section>
-
-  </body>
-</html>
+</div>
