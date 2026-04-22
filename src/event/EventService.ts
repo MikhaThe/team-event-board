@@ -129,7 +129,7 @@ export class EventService implements IEventService {
     const isOwner = viewerId === event.organizerId
     const isAdmin = viewerRole === "admin"
 
-    if (!isOwner && !isAdmin) {
+    if (event.status === "draft" && !isOwner && !isAdmin) {
       return Err({
         name: "Forbidden" as const,
         message: "You are not allowed to edit this event.",

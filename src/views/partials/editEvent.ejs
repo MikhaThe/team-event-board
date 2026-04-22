@@ -1,7 +1,7 @@
 <form 
   hx-post="/events/<%= event.id %>/edit"
   hx-target="#event-container"
-  hx-swap="outerHTML"
+  hx-swap="innerHTML"
 >
   <input name="title" value="<%= event.title %>" />
   <textarea name="description"><%= event.description %></textarea>

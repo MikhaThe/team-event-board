@@ -13,8 +13,8 @@
 
     <p><strong>Attendance:</strong> <%= event.attendeeCount %>/<%= event.capacity ?? "No limit" %></p>
 
-    <a href="/events/<%= event.id %>/edit" hx-get="/events/<%= event.id %>/edit" hx-target="#event-container" hx-swap="outerHTML">
+    <button hx-get="/events/<%= event.id %>/edit" hx-target="#event-container" hx-swap="innerHTML">
     Edit
-    </a>
+    </button>
 </div>
 
