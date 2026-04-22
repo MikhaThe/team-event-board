@@ -87,7 +87,7 @@ class EventController implements IEventController {
 
     const browserSession = touchAppSession(req.session as AppSessionStore);
 
-    res.render("editEvent", {
+    res.render("partials/editEvent", {
       event: result.value,
       session: browserSession,
     });
