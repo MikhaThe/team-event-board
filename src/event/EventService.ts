@@ -36,8 +36,8 @@ export interface IEventService {
     viewerRole?: string,
   ): Promise<Result<Event, EventDetailError>>
 
-  publishEvent(eventId: string, organizerId: string): Promise<Result<Event, EventDetailError>>
-  cancelEvent(eventId: string, organizerId: string): Promise<Result<Event, EventDetailError>>
+  publishEvent(eventId: string, organizerId: string, isAdmin?: boolean): Promise<Result<Event, EventDetailError>>
+  cancelEvent(eventId: string, organizerId: string, isAdmin?: boolean): Promise<Result<Event, EventDetailError>>
 }
 
 export class EventService implements IEventService {
@@ -192,13 +192,13 @@ export class EventService implements IEventService {
     return Ok(result.value);
   }
 
-  async publishEvent(eventId: string, organizerId: string): Promise<Result<Event, EventDetailError>> {
+  async publishEvent(eventId: string, organizerId: string, isAdmin = false): Promise<Result<Event, EventDetailError>> {
     const result = await this.eventRepository.findById(eventId)
     if (!result.ok) return Err({ name: "EventNotFound" as const, message: "Event not found." })
 
     const event = result.value
     if (!event) return Err({ name: "EventNotFound" as const, message: "Event not found." })
-    if (event.organizerId !== organizerId) return Err({ name: "Forbidden" as const, message: "Only the organizer can publish this event." })
+    if (!isAdmin && event.organizerId !== organizerId) return Err({ name: "Forbidden" as const, message: "Only the organizer can publish this event." })
     if (event.status !== "draft") return Err({ name: "InvalidTransition" as const, message: `Cannot publish an event with status "${event.status}". Only draft events can be published.` })
 
     const updated: Event = { ...event, status: "published" }
@@ -207,13 +207,13 @@ export class EventService implements IEventService {
     return Ok(updateResult.value)
   }
 
-  async cancelEvent(eventId: string, organizerId: string): Promise<Result<Event, EventDetailError>> {
+  async cancelEvent(eventId: string, organizerId: string, isAdmin = false): Promise<Result<Event, EventDetailError>> {
     const result = await this.eventRepository.findById(eventId)
     if (!result.ok) return Err({ name: "EventNotFound" as const, message: "Event not found." })
 
     const event = result.value
     if (!event) return Err({ name: "EventNotFound" as const, message: "Event not found." })
-    if (event.organizerId !== organizerId) return Err({ name: "Forbidden" as const, message: "Only the organizer can cancel this event." })
+    if (!isAdmin && event.organizerId !== organizerId) return Err({ name: "Forbidden" as const, message: "Only the organizer can cancel this event." })
     if (event.status !== "published") return Err({ name: "InvalidTransition" as const, message: `Cannot cancel an event with status "${event.status}". Only published events can be cancelled.` })
 
     const updated: Event = { ...event, status: "cancelled" }

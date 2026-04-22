@@ -4,7 +4,7 @@ import type { IRSVPRepository } from "../rsvp/RSVPRepository";
 import type { IEventWithCount, IOrganizerDashboard } from "./OrganizerEvents";
 
 export interface IOrganizerService {
-  getOrganizerDashboard(organizerId: string): Promise<Result<IOrganizerDashboard, string>>;
+  getOrganizerDashboard(organizerId: string, viewAll?: boolean): Promise<Result<IOrganizerDashboard, string>>;
 }
 
 class OrganizerService implements IOrganizerService {
@@ -13,8 +13,10 @@ class OrganizerService implements IOrganizerService {
     private readonly rsvps: IRSVPRepository,
   ) {}
 
-  async getOrganizerDashboard(organizerId: string): Promise<Result<IOrganizerDashboard, string>> {
-    const eventsResult = await this.events.findByOrganizerId(organizerId);
+  async getOrganizerDashboard(organizerId: string, viewAll = false): Promise<Result<IOrganizerDashboard, string>> {
+    const eventsResult = viewAll
+      ? await this.events.findAll()
+      : await this.events.findByOrganizerId(organizerId);
     if (!eventsResult.ok) return Err(eventsResult.value);
 
     const eventsWithCounts: IEventWithCount[] = [];

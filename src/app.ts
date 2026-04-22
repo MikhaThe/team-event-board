@@ -326,7 +326,7 @@ class ExpressApp implements IApp {
     this.app.get(
       "/organizer/dashboard",
       asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
+        if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can access this page.")) return;
 
         const store = sessionStore(req);
         const session = recordPageView(store);
@@ -346,7 +346,7 @@ class ExpressApp implements IApp {
         const session = touchAppSession(store);
         const currentUser = getAuthenticatedUser(store);
         const eventId = typeof req.params.id === "string" ? req.params.id : "";
-        await this.organizerController.publishEventFromForm(res, eventId, currentUser!.userId, session);
+        await this.organizerController.publishEventFromForm(res, eventId, currentUser!.userId, session, this.isHtmxRequest(req));
       }),
     );
 
@@ -359,7 +359,7 @@ class ExpressApp implements IApp {
         const session = touchAppSession(store);
         const currentUser = getAuthenticatedUser(store);
         const eventId = typeof req.params.id === "string" ? req.params.id : "";
-        await this.organizerController.cancelEventFromForm(res, eventId, currentUser!.userId, session);
+        await this.organizerController.cancelEventFromForm(res, eventId, currentUser!.userId, session, this.isHtmxRequest(req));
       }),
     );
 
