@@ -15,7 +15,7 @@ class EventRepository implements IEventRepository {
   private events: Event[] = []
 
   constructor() {
-    this.events.set("1", {
+    this.events.push( {
       id: "1",
       title: "Test Event",
       description: "This is a test event for Feature 2.",
@@ -30,7 +30,7 @@ class EventRepository implements IEventRepository {
       capacity: 20,
     })
 
-    this.events.set("2", {
+    this.events.push( {
       id: "2",
       title: "Music Night",
       description: "Live music event on campus.",
@@ -45,7 +45,7 @@ class EventRepository implements IEventRepository {
       capacity: 50,
     })
 
-    this.events.set("3", {
+    this.events.push( {
       id: "3",
       title: "Private Draft Event",
       description: "This is a draft event.",
@@ -66,8 +66,17 @@ class EventRepository implements IEventRepository {
     return Ok(event) 
   }
 
+  async findAll(): Promise<Result<Event[], string>> {
+    return Ok(this.events)
+  }
+
   async save(event: Event): Promise<Result<void, string>> {
-    this.events.push(event)
+    const index = this.events.findIndex(e => e.id === event.id)
+    if (index !== -1) {
+      this.events[index] = event
+    } else {
+      this.events.push(event)
+    }
     return Ok(undefined)
   }
 

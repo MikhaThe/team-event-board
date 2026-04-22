@@ -7,7 +7,7 @@ import {
 } from "../session/AppSession";
 import type { Event } from "./Event";
 import { ILoggingService } from "../service/LoggingService";
-import { touchAppSession } from "../session/AppSession";
+
 
 export interface IEventController {
   showEvent(req: Request, res: Response): Promise<void>;
@@ -87,9 +87,10 @@ class EventController implements IEventController {
 
     const browserSession = touchAppSession(req.session as AppSessionStore);
 
-    res.render("editEvent", {
+    res.render("partials/editEvent", {
       event: result.value,
       session: browserSession,
+      layout: false,
     });
   }
 
@@ -123,7 +124,34 @@ class EventController implements IEventController {
       return;
     }
 
-    res.redirect(`/events/${eventId}`);
+    const eventResult = await this.service.getEventDetail(
+      eventId,
+      user?.userId,
+      user?.role,
+    );
+
+    if (!eventResult.ok) {
+      const error = eventResult.value as EventDetailError;
+
+      if (error.name === "EventNotFound") {
+        res.status(404).send(error.message);
+        return;
+      }
+
+      if (error.name === "Forbidden") {
+        res.status(403).send(error.message);
+        return;
+      }
+
+      res.status(400).send("Unknown error.");
+      return;
+    }
+
+
+    res.render("eventDetail", {
+      event: eventResult.value,
+      layout: false,
+    })
   }
   
   async searchEvents(req: Request, res: Response): Promise<void> {

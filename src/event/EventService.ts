@@ -44,16 +44,16 @@ export class EventService implements IEventService {
   ) {}
 
   async getEventDetail(eventId: string, viewerId?: string, viewerRole?: string): Promise<Result<Event, EventDetailError>> {
-    const eventResult = await this.repository.findById(eventId)
+    const eventResult = await this.eventRepository.findById(eventId)
 
-    if (!result.ok) {
+    if (!eventResult.ok) {
       return Err({
         name: "EventNotFound" as const,
         message: "Event not found.",
       })
     }
 
-    const event = result.value
+    const event = eventResult.value
 
     if (!event) {
       return Err({
@@ -102,12 +102,12 @@ export class EventService implements IEventService {
     return Ok(events)
   }
 
-  async editEvent(
+  async editEvent(  
     eventId: string,
     updates: EditEventInput,
     viewerId?: string,
     viewerRole?: string,
-  ): Promise<Result<Event, EventDetailError>> {
+  ): Promise<Result<void, EventDetailError>> {
     const result = await this.eventRepository.findById(eventId)
 
     if (!result.ok) {
@@ -129,7 +129,7 @@ export class EventService implements IEventService {
     const isOwner = viewerId === event.organizerId
     const isAdmin = viewerRole === "admin"
 
-    if (!isOwner && !isAdmin) {
+    if (event.status === "draft" && !isOwner && !isAdmin) {
       return Err({
         name: "Forbidden" as const,
         message: "You are not allowed to edit this event.",
@@ -143,7 +143,7 @@ export class EventService implements IEventService {
 
     const saveResult = await this.eventRepository.save(updatedEvent)
 
-    if (!saveResult.ok) {
+    if (saveResult.ok === false) {
       return Err({
         name: "Forbidden" as const,
         message: "Unable to update event.",
@@ -154,7 +154,7 @@ export class EventService implements IEventService {
   }
 
   async saveEvent(event: Event): Promise<Result<void, EventDetailError>> {
-    const saveResult = await this.repository.save(event)
+    const saveResult = await this.eventRepository.save(event)
     if (saveResult.ok === false) {
       return Err({
           name: "EventNotFound" as const,
@@ -170,7 +170,7 @@ export class EventService implements IEventService {
     const now = new Date();
 
     if (!term.trim()) {
-      const result = await this.repository.listPublishedUpcoming(now);
+      const result = await this.eventRepository.listPublishedUpcoming(now);
       if (!result.ok) {
         return Err({
           name: "EventNotFound" as const,
@@ -180,7 +180,7 @@ export class EventService implements IEventService {
       return Ok(result.value);
     }
 
-    const result = await this.repository.searchPublishedUpcoming(normalized, now);
+    const result = await this.eventRepository.searchPublishedUpcoming(normalized, now);
     if (result.ok === false) {
       return Err({
         name: "EventNotFound" as const,
