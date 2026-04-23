@@ -156,9 +156,12 @@ class EventController implements IEventController {
   
   async searchEvents(req: Request, res: Response): Promise<void> {
     const termRaw = req.query.q;
-    const term = Array.isArray(termRaw) ? termRaw[0] : termRaw;
-
-    const result = await this.service.searchEvents(String(term));
+    const term = Array.isArray(termRaw) 
+    ? (typeof termRaw[0] === "string" ? termRaw[0] : null)
+    : typeof termRaw === "string" 
+    ? termRaw 
+    : null;
+    const result = await this.service.searchEvents(term);
 
     if (!result.ok) {
       const error = result.value as EventDetailError;
