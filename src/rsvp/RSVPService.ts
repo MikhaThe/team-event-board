@@ -34,15 +34,12 @@ class RSVPService implements IRSVPService {
     }
 
     const existingResult = await this.repo.findByUserAndEvent(userId, eventId);
-    if (existingResult.value === null) {
+    if (!existingResult.ok) {
       return Err(RSVPNotFound("RSVP could not be found"));
     }
 
-    const existing = existingResult.value as IRSVPRecord;
+    const existing = existingResult.value;
     const countResult = await this.repo.countGoingByEvent(eventId);
-    if (countResult.value === 0) {
-      return Err(RSVPNotFound("No RSVP could be found"));
-    }
 
     const goingCount = Number(countResult.value);
     if (!existing) {
