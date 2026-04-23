@@ -1,0 +1,13 @@
+<% if (events.length === 0) { %>
+  <p>No matching published events found.</p>
+<% } %>
+
+<ul>
+  <% events.forEach((event) => { %>
+    <li>
+      <a href="/events/<%= event.id %>"><%= event.title %></a>
+      - <%= event.category %>
+      - <%= event.startDatetime %>
+    </li>
+  <% }) %>
+</ul>

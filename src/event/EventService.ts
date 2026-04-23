@@ -2,10 +2,7 @@ import { Err, Ok, type Result } from "../lib/result"
 import type { Event } from "./Event"
 import type { IEventRepository } from "./EventRepository"
 import { InMemoryEventRepository } from "./EventRepository"
-
-export type EventDetailError =
-  | { name: "EventNotFound"; message: string }
-  | { name: "Forbidden"; message: string }
+import { type EventDetailError, EventNotFound, Forbidden, InvalidTransition } from "../lib/error"
 
 export type EditEventInput = {
   title?: string
@@ -32,10 +29,12 @@ export interface IEventService {
     eventId: string,
     updates: EditEventInput,
     viewerId?: string,
-    viewerRole?: string
-  ): Promise<Result<void, EventDetailError>>;
-  saveEvent(event: Event): Promise<Result<void, EventDetailError>>;
-  searchEvents(input: string | null,): Promise<Result<Event[], EventDetailError>>;
+    viewerRole?: string,
+  ): Promise<Result<Event, EventDetailError>>
+
+  searchEvents(input: string | null): Promise<Result<Event[], EventDetailError>>
+  publishEvent(eventId: string, organizerId: string, isAdmin?: boolean): Promise<Result<Event, EventDetailError>>
+  cancelEvent(eventId: string, organizerId: string, isAdmin?: boolean): Promise<Result<Event, EventDetailError>>
 }
 
 export class EventService implements IEventService {
@@ -46,30 +45,21 @@ export class EventService implements IEventService {
   async getEventDetail(eventId: string, viewerId?: string, viewerRole?: string): Promise<Result<Event, EventDetailError>> {
     const result = await this.repository.findById(eventId)
 
-    if (!eventResult.ok) {
-      return Err({
-        name: "EventNotFound" as const,
-        message: "Event not found.",
-      })
+    if (!result.ok) {
+      return Err(EventNotFound("Event not found."))
     }
 
-    const event = eventResult.value
+    const event = result.value
 
     if (!event) {
-      return Err({
-        name: "EventNotFound" as const,
-        message: "Event not found.",
-      })
+      return Err(EventNotFound("Event not found."))
     }
 
     const isOwner = viewerId === event.organizerId
     const isAdmin = viewerRole === "admin"
 
     if (event.status === "draft" && !isOwner && !isAdmin) {
-      return Err({
-        name: "Forbidden" as const,
-        message: "You are not allowed to view this draft event.",
-      })
+      return Err(Forbidden("You are not allowed to view this draft event."))
     }
 
     return Ok(event)
@@ -107,33 +97,24 @@ export class EventService implements IEventService {
     updates: EditEventInput,
     viewerId?: string,
     viewerRole?: string,
-  ): Promise<Result<void, EventDetailError>> {
+  ): Promise<Result<Event, EventDetailError>> {
     const result = await this.repository.findById(eventId)
 
     if (!result.ok) {
-      return Err({
-        name: "EventNotFound" as const,
-        message: "Event not found.",
-      })
+      return Err(EventNotFound("Event not found."))
     }
 
     const event = result.value
 
     if (!event) {
-      return Err({
-        name: "EventNotFound" as const,
-        message: "Event not found.",
-      })
+      return Err(EventNotFound("Event not found."))
     }
 
     const isOwner = viewerId === event.organizerId
     const isAdmin = viewerRole === "admin"
 
     if (event.status === "draft" && !isOwner && !isAdmin) {
-      return Err({
-        name: "Forbidden" as const,
-        message: "You are not allowed to edit this event.",
-      })
+      return Err(Forbidden("You are not allowed to edit this event."))
     }
 
     const updatedEvent: Event = {
@@ -144,22 +125,16 @@ export class EventService implements IEventService {
     const saveResult = await this.repository.save(updatedEvent)
 
     if (saveResult.ok === false) {
-      return Err({
-        name: "Forbidden" as const,
-        message: "Unable to update event.",
-      })
+      return Err(Forbidden("You are not allowed to edit this event."))
     }
 
-    return Ok(undefined);
+    return Ok(updatedEvent);
   }
 
   async saveEvent(event: Event): Promise<Result<void, EventDetailError>> {
-    const saveResult = await this.eventRepository.save(event)
+    const saveResult = await this.repository.save(event)
     if (saveResult.ok === false) {
-      return Err({
-          name: "EventNotFound" as const,
-          message: "Event not found.",
-        })
+      return Err(EventNotFound("Event not found."))
     }
     return Ok(undefined)
   }
@@ -170,24 +145,52 @@ export class EventService implements IEventService {
     const now = new Date();
 
     if (!term.trim()) {
-      const result = await this.eventRepository.listPublishedUpcoming(now);
+      const result = await this.repository.listPublishedUpcoming(now);
       if (!result.ok) {
-        return Err({
-          name: "EventNotFound" as const,
-          message: "Event not found.",
-        })
+        return Err(EventNotFound("Event not found."))
       }
       return Ok(result.value);
     }
 
-    const result = await this.eventRepository.searchPublishedUpcoming(normalized, now);
+    const result = await this.repository.searchPublishedUpcoming(normalized, now);
     if (result.ok === false) {
-      return Err({
-        name: "EventNotFound" as const,
-        message: "Event not found.",
-      })
+      return Err(EventNotFound("Event not found."))
     }
     return Ok(result.value);
+  }
+
+  async publishEvent(eventId: string, organizerId: string, isAdmin = false): Promise<Result<Event, EventDetailError>> {
+    const result = await this.repository.findById(eventId)
+    if (!result.ok) {return Err(EventNotFound("Event not found."))}
+
+    const event = result.value
+    if (!event) return Err(EventNotFound("Event not found."))
+    if (!isAdmin && event.organizerId !== organizerId) return Err(Forbidden("Only the organizer can publish this event."))
+    if (event.status !== "draft") return Err(InvalidTransition(`Cannot publish an event with status ${event.status}. Only draft events can be published.`))
+
+    const updated: Event = { ...event, status: "published" }
+    const updateResult = await this.repository.update(updated)
+    if (!updateResult.ok) {
+      return updateResult
+    }
+    return Ok(updateResult.value)
+  }
+
+  async cancelEvent(eventId: string, organizerId: string, isAdmin = false): Promise<Result<Event, EventDetailError>> {
+    const result = await this.repository.findById(eventId)
+    if (!result.ok) {return Err(EventNotFound("Event not found."))}
+
+    const event = result.value
+    if (!event) return Err(EventNotFound("Event not found."))
+    if (!isAdmin && event.organizerId !== organizerId) return Err(Forbidden("Only the organizer can cancel this event."))
+    if (event.status !== "published") return Err(InvalidTransition(`Cannot cancel an event with status ${event.status}. Only published events can be cancelled.`))
+
+    const updated: Event = { ...event, status: "cancelled" }
+    const updateResult = await this.repository.update(updated)
+    if (!updateResult.ok) {
+      return updateResult
+    }
+    return Ok(updateResult.value)
   }
 }
 
