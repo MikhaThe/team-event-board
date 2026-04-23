@@ -4,6 +4,7 @@ import type { IOrganizerService } from "./OrganizerService";
 import type { ILoggingService } from "../service/LoggingService";
 import type { IAppBrowserSession } from "../session/AppSession";
 import type { IOrganizerDashboard } from "./OrganizerEvents";
+import { EventDetailError } from "../lib/error";
 
 export interface IEventController {
   showOrganizerDashboard(
@@ -94,11 +95,12 @@ class OrganizerController implements IEventController {
     const result = await this.eventService.publishEvent(eventId, organizerId, isAdmin);
 
     if (!result.ok) {
-      const status = this.mapErrorStatus(result.value.name);
+      const error = result.value as EventDetailError
+      const status = this.mapErrorStatus(error.name);
       const log = status >= 500 ? this.logger.error : this.logger.warn;
-      log.call(this.logger, `Publish event failed: ${result.value.message}`);
+      log.call(this.logger, `Publish event failed: ${error.message}`);
       res.status(status);
-      await this.renderDashboard(res, organizerId, session, result.value.message, isHtmx);
+      await this.renderDashboard(res, organizerId, session, error.message, isHtmx);
       return;
     }
 
@@ -121,11 +123,12 @@ class OrganizerController implements IEventController {
     const result = await this.eventService.cancelEvent(eventId, organizerId, isAdmin);
 
     if (!result.ok) {
-      const status = this.mapErrorStatus(result.value.name);
+      const error = result.value as EventDetailError
+      const status = this.mapErrorStatus(error.name);
       const log = status >= 500 ? this.logger.error : this.logger.warn;
-      log.call(this.logger, `Cancel event failed: ${result.value.message}`);
+      log.call(this.logger, `Cancel event failed: ${error.message}`);
       res.status(status);
-      await this.renderDashboard(res, organizerId, session, result.value.message, isHtmx);
+      await this.renderDashboard(res, organizerId, session, error.message, isHtmx);
       return;
     }
 
