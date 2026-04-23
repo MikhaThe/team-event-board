@@ -223,6 +223,7 @@ class EventController implements IEventController {
   }
 
   async createEvent(req: Request, res: Response): Promise<void> {
+    const isHtmx = req.headers['hx-request'] === 'true';
     const session = touchAppSession(req.session as AppSessionStore);
     const user = session.authenticatedUser;
 
@@ -255,11 +256,17 @@ class EventController implements IEventController {
         session,
         error: error.message,
         formData: req.body,
+        layout: isHtmx ? false : undefined,
       });
       return;
     }
 
-    res.redirect(`/events/${result.value.id}`);
+    if (isHtmx) {
+      res.setHeader('HX-Redirect', `/events/${result.value.id}`);
+      res.status(200).end();
+    } else {
+      res.redirect(`/events/${result.value.id}`);
+    }
   }
 }
 

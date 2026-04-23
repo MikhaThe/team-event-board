@@ -14,11 +14,15 @@ class AttendeeController implements IAttendeeController {
   ) {}
 
   async getAttendeeList(req: Request, res: Response): Promise<void> {
+    const isHtmx = req.headers['hx-request'] === 'true';
     const session = touchAppSession(req.session as AppSessionStore);
     const user = session.authenticatedUser;
 
     if (!user) {
-      res.status(403).redirect("/login");
+      res.status(403).render("partials/error", {
+        message: "You must be logged in to view this page.",
+        layout: false,
+      });
       return;
     }
 
@@ -45,6 +49,7 @@ class AttendeeController implements IAttendeeController {
       this.logger.warn(`AttendeeList failed: ${error.message}`);
       res.status(status).render("partials/error", {
         message: error.message,
+        layout: false,
       });
       return;
     }
@@ -52,6 +57,7 @@ class AttendeeController implements IAttendeeController {
     res.render("attendeeList", {
       session,
       ...result.value,
+      layout: isHtmx ? false : undefined,
     });
   }
 }

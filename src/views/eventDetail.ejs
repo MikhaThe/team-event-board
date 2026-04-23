@@ -21,8 +21,13 @@
 <% if (session.authenticatedUser &&
       (session.authenticatedUser.userId === event.organizerId ||
        session.authenticatedUser.role === "admin")) { %>
-  <a href="/events/<%= event.id %>/attendees"
-     class="inline-block mt-4 text-sm text-blue-600 hover:underline">
-    View Attendee List
-  </a>
+  <div id="attendee-list-section">
+    <button
+      hx-get="/events/<%= event.id %>/attendees"
+      hx-target="#attendee-list-section"
+      hx-swap="outerHTML"
+      class="text-sm text-blue-600 hover:underline mt-4 inline-block cursor-pointer bg-transparent border-none p-0">
+      View Attendee List
+    </button>
+  </div>
 <% } %>
