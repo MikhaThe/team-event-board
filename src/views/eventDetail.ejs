@@ -1,16 +1,22 @@
-<h1><%= event.title %></h1>
+<div id = "event-container">
+    <h1><%= event.title %></h1>
 
-<p><%= event.description %></p>
+    <p><%= event.description %></p>
 
-<p><strong>Location:</strong> <%= event.location %></p>
-<p><strong>Category:</strong> <%= event.category %></p>
-<p><strong>Status:</strong> <%= event.status %></p>
-<p><strong>Organizer:</strong> <%= event.organizerName %></p>
+    <p><strong>Location:</strong> <%= event.location %></p>
+    <p><strong>Category:</strong> <%= event.category %></p>
+    <p><strong>Status:</strong> <%= event.status %></p>
+    <p><strong>Organizer:</strong> <%= event.organizerName %></p>
 
-<p><strong>Start:</strong> <%= event.startDatetime %></p>
-<p><strong>End:</strong> <%= event.endDatetime %></p>
+    <p><strong>Start:</strong> <%= event.startDatetime %></p>
+    <p><strong>End:</strong> <%= event.endDatetime %></p>
 
-<p><strong>Attendance:</strong> <%= event.attendeeCount %>/<%= event.capacity ?? "No limit" %></p>
+    <p><strong>Attendance:</strong> <%= event.attendeeCount %>/<%= event.capacity ?? "No limit" %></p>
+
+    <button hx-get="/events/<%= event.id %>/edit" hx-target="#event-container" hx-swap="innerHTML">
+    Edit
+    </button>
+</div>
 
 <% if (session.authenticatedUser &&
       (session.authenticatedUser.userId === event.organizerId ||

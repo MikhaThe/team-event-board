@@ -1,6 +1,6 @@
 import type { IRSVPRecord, RSVPStatus } from "./RSVP";
 import  { type Result, Ok, Err} from "../lib/result"
-import { RSVPNotFound, type RSVPError } from "../auth/errors"
+import { RSVPNotFound, type RSVPError } from "../lib/error"
 
 
 export interface IRSVPRepository {
@@ -11,6 +11,30 @@ export interface IRSVPRepository {
     create(userId: string, eventId: string, status: RSVPStatus): Promise<Result<IRSVPRecord, RSVPError>>;
     updateStatus(userId: string, eventId: string, status: RSVPStatus): Promise<Result<IRSVPRecord, RSVPError>>;
 }
+
+export const SEED_RSVPS: IRSVPRecord[] = [
+  {
+    id: "rsvp-1",
+    eventId: "event-2",
+    userId: "user-staff",
+    status: "going",
+    createdAt: new Date(),
+  },
+  {
+    id: "rsvp-2",
+    eventId: "event-2",
+    userId: "user-reader",
+    status: "going",
+    createdAt: new Date(),
+  },
+  {
+    id: "rsvp-3",
+    eventId: "event-3",
+    userId: "user-re ader",
+    status: "going",
+    createdAt: new Date(),
+  },
+];
 
 class RSVPRepository implements IRSVPRepository {
     constructor(private readonly rsvpStore: IRSVPRecord[]) {};

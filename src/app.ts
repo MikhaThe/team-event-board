@@ -21,15 +21,9 @@ import { ILoggingService } from "./service/LoggingService";
 import { IEventController } from "./event/EventController";
 import { IEventListController } from "./event/EventListController";
 import { IRSVPController } from "./rsvp/RSVPController";
-import { IDashboardController } from "./dashboard/DashboardController";
+import type { IEventController as IOrganizerController } from "./organizerdashboard/OrganizerDashboard";
+import type { IDashboardController } from "./dashboard/DashboardController";
 import { IAttendeeController } from "./attendee/AttendeeController";
-
-// TODO: replace with real import once OrganizerController is implemented
-export interface IOrganizerController {
-  showOrganizerDashboard(res: Response, userId: string, session: IAppBrowserSession): Promise<void>;
-  publishEventFromForm(res: Response, eventId: string, userId: string, session: IAppBrowserSession): Promise<void>;
-  cancelEventFromForm(res: Response, eventId: string, userId: string, session: IAppBrowserSession): Promise<void>;
-}
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -293,6 +287,18 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // ── Event search route (Feature 10) — must be before /:id ────────
+
+    this.app.get(
+      "/events/search",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+        await this.eventController.searchEvents(req, res);
+      }),
+    );
+
     // ── Attendee list route (Feature 12) ────────────────────────────
 
     this.app.get(
@@ -313,6 +319,30 @@ class ExpressApp implements IApp {
         }
 
         await this.eventController.showEvent(req, res);
+      }),
+    );
+
+    // ── Event edit route (Feature 3) ─────────────────────────────────
+
+    this.app.get(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        await this.eventController.showEditEvent(req, res);
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        await this.eventController.updateEvent(req, res);
       }),
     );
 
@@ -339,7 +369,6 @@ class ExpressApp implements IApp {
       "/organizer/dashboard",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
-
         if (!this.organizerController) { res.status(501).send("Not implemented."); return; }
         const store = sessionStore(req);
         const session = recordPageView(store);
@@ -355,7 +384,6 @@ class ExpressApp implements IApp {
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
         if (!this.organizerController) { res.status(501).send("Not implemented."); return; }
-
         const store = sessionStore(req);
         const session = touchAppSession(store);
         const currentUser = getAuthenticatedUser(store);
@@ -369,7 +397,6 @@ class ExpressApp implements IApp {
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
         if (!this.organizerController) { res.status(501).send("Not implemented."); return; }
-
         const store = sessionStore(req);
         const session = touchAppSession(store);
         const currentUser = getAuthenticatedUser(store);
@@ -378,27 +405,17 @@ class ExpressApp implements IApp {
       }),
     );
 
-    // ── RSVP Dashboard route (Feature 7) ───────────────────────────────
-    this.app.get(
-    "/dashboard",
-    asyncHandler(async (req, res) => {
-      if (!this.requireAuthenticated(req, res)) {
-          return;
-      }
-      await this.dashboardController.getDashboard(req, res);
-    })
-  );
+    // ── RSVP Dashboard route (Feature 7) ─────────────────────────────
 
-    // -- Event search route (Feature 10) ------------------------------
-      this.app.get(
-        "/events/search",
-        asyncHandler(async (req, res) => {
-          if (!this.requireAuthenticated(req, res)) {
-            return;
-          }
-          await this.eventController.searchEvents(req, res);
-        }),
-      );
+    this.app.get(
+      "/dashboard",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+        await this.dashboardController.getDashboard(req, res);
+      }),
+    );
 
     // ── Error handler ────────────────────────────────────────────────
 

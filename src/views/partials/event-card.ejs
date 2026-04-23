@@ -27,7 +27,10 @@
   </div>
 
   <% if (action === "publish") { %>
-    <form method="post" action="/events/<%= event.id %>/publish" class="m-0 shrink-0">
+    <form method="post" action="/events/<%= event.id %>/publish" class="m-0 shrink-0"
+      hx-post="/events/<%= event.id %>/publish"
+      hx-target="#dashboard-content"
+      hx-swap="innerHTML">
       <button
         type="submit"
         class="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium cursor-pointer hover:bg-green-700"
@@ -37,8 +40,10 @@
     </form>
   <% } else if (action === "cancel") { %>
     <form method="post" action="/events/<%= event.id %>/cancel" class="m-0 shrink-0"
-      x-data
-      @submit.prevent="if (confirm('Are you sure you want to cancel this event?')) $el.submit()">
+      hx-post="/events/<%= event.id %>/cancel"
+      hx-target="#dashboard-content"
+      hx-swap="innerHTML"
+      hx-confirm="Are you sure you want to cancel this event?">
       <button
         type="submit"
         class="px-4 py-2 rounded-lg bg-red-50 text-red-600 border border-red-200 text-sm font-medium cursor-pointer hover:bg-red-100"
