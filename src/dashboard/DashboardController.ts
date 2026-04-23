@@ -46,6 +46,10 @@ class DashboardController implements IDashboardController {
     this.logger.info(`Dashboard loaded for user=${user.userId}`);
     // Pass the view model to your template engine of choice.
     // ;
+    if(req.headers["hx-request"] === "true") {
+      res.status(200).render("partials/dashboard-sections", { dashboard: result.value, session: req.session, layout: false });
+      return;
+    }
     res.status(200).render("dashboard", { dashboard: result.value, session: req.session });
   }
 }

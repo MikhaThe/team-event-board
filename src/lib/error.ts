@@ -37,6 +37,11 @@ export const Forbidden = (message: string): EventDetailError => ({
   message,
 })
 
+export const InvalidTransition = (message: string): EventDetailError => ({
+  name: "InvalidTransition",
+  message,
+})
+
 export const InvalidCategory = (message: string): FilterError => ({
   name: "InvalidCategory",
   message,
