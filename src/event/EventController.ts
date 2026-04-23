@@ -86,10 +86,9 @@ class EventController implements IEventController {
 
     const browserSession = touchAppSession(req.session as AppSessionStore);
 
-    res.render("partials/editEvent", {
+    res.render("editEvent", {
       event: result.value,
       session: browserSession,
-      layout: false,
     });
   }
 
@@ -123,34 +122,7 @@ class EventController implements IEventController {
       return;
     }
 
-    const eventResult = await this.service.getEventDetail(
-      eventId,
-      user?.userId,
-      user?.role,
-    );
-
-    if (!eventResult.ok) {
-      const error = eventResult.value as EventDetailError;
-
-      if (error.name === "EventNotFound") {
-        res.status(404).send(error.message);
-        return;
-      }
-
-      if (error.name === "Forbidden") {
-        res.status(403).send(error.message);
-        return;
-      }
-
-      res.status(400).send("Unknown error.");
-      return;
-    }
-
-
-    res.render("eventDetail", {
-      event: eventResult.value,
-      layout: false,
-    })
+    res.redirect(`/events/${eventId}`);
   }
   
   async searchEvents(req: Request, res: Response): Promise<void> {

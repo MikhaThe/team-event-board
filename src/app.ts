@@ -21,7 +21,8 @@ import { ILoggingService } from "./service/LoggingService";
 import { IEventController } from "./event/EventController";
 import { IEventListController } from "./event/EventListController";
 import { IRSVPController } from "./rsvp/RSVPController";
-import { IDashboardController } from "./dashboard/DashboardController";
+import type { IEventController as IOrganizerController } from "./organizerdashboard/OrganizerDashboard";
+import type { IDashboardController } from "./dashboard/DashboardController";
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -42,6 +43,7 @@ class ExpressApp implements IApp {
     private readonly eventController: IEventController,
     private readonly eventlistController: IEventListController,
     private readonly authController: IAuthController,
+    private readonly organizerController: IOrganizerController,
     private readonly logger: ILoggingService,
     private readonly rsvpController: IRSVPController,
     private readonly dashboardController: IDashboardController
@@ -319,47 +321,47 @@ class ExpressApp implements IApp {
       }),
     );
 
-    // // ── Organizer event dashboard (Feature 8) ────────────────────────
+    // ── Organizer event dashboard (Feature 8) ────────────────────────
 
-    // this.app.get(
-    //   "/organizer/dashboard",
-    //   asyncHandler(async (req, res) => {
-    //     if (!this.requireAuthenticated(req, res)) return;
+    this.app.get(
+      "/organizer/dashboard",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can access this page.")) return;
 
-    //     const store = sessionStore(req);
-    //     const session = recordPageView(store);
-    //     const currentUser = getAuthenticatedUser(store);
-    //     await this.organizerController.showOrganizerDashboard(res, currentUser!.userId, session);
-    //   }),
-    // );
+        const store = sessionStore(req);
+        const session = recordPageView(store);
+        const currentUser = getAuthenticatedUser(store);
+        await this.organizerController.showOrganizerDashboard(res, currentUser!.userId, session);
+      }),
+    );
 
-    // // ── Event publish / cancel (Feature 5) ───────────────────────────
+    // ── Event publish / cancel (Feature 5) ───────────────────────────
 
-    // this.app.post(
-    //   "/events/:id/publish",
-    //   asyncHandler(async (req, res) => {
-    //     if (!this.requireAuthenticated(req, res)) return;
+    this.app.post(
+      "/events/:id/publish",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
 
-    //     const store = sessionStore(req);
-    //     const session = touchAppSession(store);
-    //     const currentUser = getAuthenticatedUser(store);
-    //     const eventId = typeof req.params.id === "string" ? req.params.id : "";
-    //     await this.organizerController.publishEventFromForm(res, eventId, currentUser!.userId, session);
-    //   }),
-    // );
+        const store = sessionStore(req);
+        const session = touchAppSession(store);
+        const currentUser = getAuthenticatedUser(store);
+        const eventId = typeof req.params.id === "string" ? req.params.id : "";
+        await this.organizerController.publishEventFromForm(res, eventId, currentUser!.userId, session, this.isHtmxRequest(req));
+      }),
+    );
 
-    // this.app.post(
-    //   "/events/:id/cancel",
-    //   asyncHandler(async (req, res) => {
-    //     if (!this.requireAuthenticated(req, res)) return;
+    this.app.post(
+      "/events/:id/cancel",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
 
-    //     const store = sessionStore(req);
-    //     const session = touchAppSession(store);
-    //     const currentUser = getAuthenticatedUser(store);
-    //     const eventId = typeof req.params.id === "string" ? req.params.id : "";
-    //     await this.organizerController.cancelEventFromForm(res, eventId, currentUser!.userId, session);
-    //   }),
-    // );
+        const store = sessionStore(req);
+        const session = touchAppSession(store);
+        const currentUser = getAuthenticatedUser(store);
+        const eventId = typeof req.params.id === "string" ? req.params.id : "";
+        await this.organizerController.cancelEventFromForm(res, eventId, currentUser!.userId, session, this.isHtmxRequest(req));
+      }),
+    );
 
     // ── RSVP Dashboard route (Feature 7) ───────────────────────────────
     this.app.get(
@@ -404,9 +406,10 @@ export function CreateApp(
   eventController: IEventController,
   eventlistController: IEventListController,
   authController: IAuthController,
+  organizerController: IOrganizerController,
   logger: ILoggingService,
   rsvpController: IRSVPController,
-  dashboardController: IDashboardController
+  dashboardController: IDashboardController,
 ): IApp {
-  return new ExpressApp(eventController, eventlistController, authController, logger, rsvpController, dashboardController);
+  return new ExpressApp(eventController, eventlistController, authController, organizerController, logger, rsvpController, dashboardController);
 }
