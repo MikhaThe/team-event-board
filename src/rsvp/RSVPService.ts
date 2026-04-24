@@ -1,7 +1,7 @@
 import { IRSVPRecord, type RSVPStatus} from "./RSVP";
 import { IRSVPRepository } from "./RSVPRepository";
-import { AuthError, ValidationError, UnexpectedDependencyError } from "../auth/errors"
 import { type Result, Ok, Err} from "../lib/result"
+import { type RSVPError, RSVPNotFound, InvalidRSVP, UnexpectedRSVPError } from "../lib/error";
 
 export interface ToggleRSVPInput {
   userId: string;
@@ -10,7 +10,7 @@ export interface ToggleRSVPInput {
 }
 
 export interface IRSVPService {
-  toggleRSVP(input: ToggleRSVPInput): Promise<Result<IRSVPRecord, AuthError>>
+  toggleRSVP(input: ToggleRSVPInput): Promise<Result<IRSVPRecord, RSVPError>>
 }
 
 class RSVPService implements IRSVPService {
@@ -18,45 +18,42 @@ class RSVPService implements IRSVPService {
 
   async toggleRSVP(
     input: ToggleRSVPInput,
-  ): Promise<Result<IRSVPRecord, AuthError>> {
+  ): Promise<Result<IRSVPRecord, RSVPError>> {
     const userId = input.userId?.trim();
     const eventId = input.eventId?.trim();
     const capacity = input.capacity;
 
     if (!userId) {
-      return Err(ValidationError("User ID is required."));
+      return Err(InvalidRSVP("User ID is required."));
     }
     if (!eventId) {
-      return Err(ValidationError("Event ID is required."));
+      return Err(InvalidRSVP("Event ID is required."));
     }
     if (capacity < 0) {
-      return Err(ValidationError("Capacity must be >= 0."));
+      return Err(InvalidRSVP("Capacity must be >= 0."));
     }
 
     const existingResult = await this.repo.findByUserAndEvent(userId, eventId);
-    if (existingResult.ok === false) {
-      return Err(UnexpectedDependencyError(existingResult.value.message));
+    if (!existingResult.ok) {
+      return Err(RSVPNotFound("RSVP could not be found"));
     }
 
     const existing = existingResult.value;
     const countResult = await this.repo.countGoingByEvent(eventId);
-    if (countResult.ok === false) {
-      return Err(UnexpectedDependencyError(countResult.value.message));
-    }
 
-    const goingCount = countResult.value;
+    const goingCount = Number(countResult.value);
     if (!existing) {
       const status: RSVPStatus = goingCount < capacity ? "going" : "waitlisted";
 
       const createResult = await this.repo.create(userId, eventId, status);
 
       if (createResult.ok === false) {
-        return Err(UnexpectedDependencyError(createResult.value.message));
+        return Err(InvalidRSVP("RSVP could not be created"));
       }
       return Ok(createResult.value);
     }
 
-    if (existing.status === "going" || existing.status === "waitlisted") {
+    if (existing.status === "going" || existing!.status === "waitlisted") {
       const updateResult = await this.repo.updateStatus(
         userId,
         eventId,
@@ -64,7 +61,7 @@ class RSVPService implements IRSVPService {
       );
 
       if (updateResult.ok === false) {
-        return Err(UnexpectedDependencyError(updateResult.value.message));
+        return Err(RSVPNotFound(updateResult.value.message));
       }
       return Ok(updateResult.value);
     }
@@ -79,12 +76,12 @@ class RSVPService implements IRSVPService {
       );
 
       if (updateResult.ok === false) {
-        return Err(UnexpectedDependencyError(updateResult.value.message));
+        return Err(RSVPNotFound(updateResult.value.message));
       }
       return Ok(updateResult.value);
     }
 
-    return Err(ValidationError("Invalid RSVP state."));
+    return Err(UnexpectedRSVPError("Invalid RSVP state."));
   }
 }
 
