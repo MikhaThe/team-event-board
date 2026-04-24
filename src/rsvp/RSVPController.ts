@@ -7,6 +7,7 @@ import {
 } from "../session/AppSession";
 import type { AuthError } from "../auth/errors";
 import { create } from "node:domain";
+import { RSVPError } from "../lib/error";
 
 export interface IRSVPController {
   toggleRSVPFromForm(
@@ -22,9 +23,9 @@ export class RSVPController implements IRSVPController {
     private readonly logger: ILoggingService,
   ) {}
 
-  private mapErrorStatus(error: AuthError): number {
-    if (error.name === "AuthorizationRequired") return 403;
-    if (error.name === "ValidationError") return 400;
+  private mapErrorStatus(error: RSVPError): number {
+    if (error.name === "Invalid RSVP") return 400;
+    if (error.name === "RSVP Not Found") return 404
     return 500;
   }
 
