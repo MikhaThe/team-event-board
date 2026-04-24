@@ -1,0 +1,34 @@
+<%
+  // Derive button label from the current user's RSVP status:
+  //   null / undefined  → no RSVP yet       → "RSVP"
+  //   "going"           → active RSVP        → "Cancel RSVP"
+  //   "waitlisted"      → on waitlist        → "Cancel RSVP"
+  //   "cancelled"       → previously cancel  → "RSVP Again"
+  let buttonLabel;
+  if (rsvpStatus === "going" || rsvpStatus === "waitlisted") {
+    buttonLabel = "Cancel RSVP";
+  } else if (rsvpStatus === "cancelled") {
+    buttonLabel = "RSVP Again";
+  } else {
+    buttonLabel = "RSVP";
+  }
+%>
+
+<% if (error) { %>
+  <p style="color: red;"><%= error %></p>
+<% } %>
+
+<% if (rsvpStatus === "going") { %>
+  <p>You are going to this event.</p>
+<% } else if (rsvpStatus === "waitlisted") { %>
+  <p>You are on the waitlist for this event.</p>
+<% } %>
+
+<form
+  hx-post="/events/<%= eventId %>/rsvp"
+  hx-target="#rsvp-container"
+  hx-swap="innerHTML"
+>
+  <input type="hidden" name="capacity" value="<%= capacity %>" />
+  <button type="submit"><%= buttonLabel %></button>
+</form>
