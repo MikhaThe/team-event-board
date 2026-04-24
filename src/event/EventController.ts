@@ -130,21 +130,7 @@ class EventController implements IEventController {
       return;
     }
 
-    const eventResult = await this.service.getEventDetail(
-      eventId,
-      user?.userId,
-      user?.role,
-    );
-
-    if (!eventResult.ok) {
-      res.status(500).render("partials/error", { message: "Could not reload event.", layout: false });
-      return;
-    }
-
-    res.render("eventDetail", {
-      event: eventResult.value,
-      layout: false,
-    });
+    res.redirect(`/events/${eventId}`);
   }
 
   async listEvents(req: Request, res: Response): Promise<void> {

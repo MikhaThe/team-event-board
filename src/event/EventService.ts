@@ -127,7 +127,7 @@ export class EventService implements IEventService {
     const isOwner = viewerId === event.organizerId
     const isAdmin = viewerRole === "admin"
 
-    if (event.status === "draft" && !isOwner && !isAdmin) {
+    if (!isOwner && !isAdmin) {
       return Err(Forbidden("You are not allowed to edit this event."))
     }
 
@@ -139,7 +139,7 @@ export class EventService implements IEventService {
     const saveResult = await this.repository.save(updatedEvent)
 
     if (saveResult.ok === false) {
-      return Err(Forbidden("You are not allowed to edit this event."))
+      return Err(Forbidden("Failed to save event."))
     }
 
     return Ok(updatedEvent)
