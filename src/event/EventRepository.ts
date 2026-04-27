@@ -1,18 +1,30 @@
+import { randomUUID } from "node:crypto"
 import type { Event } from "./Event"
 import type { Result } from "../lib/result"
-import type { AuthError } from "../auth/errors"
-import { Ok } from "../lib/result"
+import { type EventDetailError, EventNotFound } from "../lib/error"
+import { Ok, Err } from "../lib/result"
 
 export interface IEventRepository {
+<<<<<<< HEAD
   findById(id: string): Promise<Result<Event | null, string>>
   findAll(): Promise<Result<Event[], string>>
   save(event: Event): Promise<Result<void, string>>
   searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], AuthError>>;
   listPublishedUpcoming(now: Date): Promise<Result<Event[], AuthError>>;
+=======
+  findById(id: string): Promise<Result<Event | null, EventDetailError>>
+  findAll(): Promise<Result<Event[], EventDetailError>>
+  save(event: Event): Promise<Result<void, EventDetailError>>
+  findByOrganizerId(organizerId: string): Promise<Result<Event[], EventDetailError>>
+  update(event: Event): Promise<Result<Event, EventDetailError>>
+  listPublishedUpcoming(now: Date): Promise<Result<Event[], EventDetailError>>
+  searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], EventDetailError>>
+  create(data: Omit<Event, "id" | "attendeeCount">): Promise<Result<Event, EventDetailError>>
+>>>>>>> dev
 }
 
 class EventRepository implements IEventRepository {
-  private events: Event[] = []
+  private readonly events: Map<string, Event> = new Map()
 
   constructor() {
     this.events.set("1", {
@@ -22,8 +34,8 @@ class EventRepository implements IEventRepository {
       location: "UMass Amherst",
       category: "School",
       status: "published",
-      organizerId: "user1",
-      organizerName: "Una User",
+      organizerId: "user-staff",
+      organizerName: "Sam Staff",
       startDatetime: "2026-04-20T10:00:00",
       endDatetime: "2026-04-20T12:00:00",
       attendeeCount: 10,
@@ -37,8 +49,8 @@ class EventRepository implements IEventRepository {
       location: "Campus Center",
       category: "Music",
       status: "published",
-      organizerId: "user2",
-      organizerName: "Sam Staff",
+      organizerId: "user-admin",
+      organizerName: "Avery Admin",
       startDatetime: "2026-04-22T18:00:00",
       endDatetime: "2026-04-22T20:00:00",
       attendeeCount: 30,
@@ -52,8 +64,8 @@ class EventRepository implements IEventRepository {
       location: "Hidden Room",
       category: "School",
       status: "draft",
-      organizerId: "user1",
-      organizerName: "Una User",
+      organizerId: "user-staff",
+      organizerName: "Sam Staff",
       startDatetime: "2026-04-25T09:00:00",
       endDatetime: "2026-04-25T10:00:00",
       attendeeCount: 0,
@@ -61,45 +73,71 @@ class EventRepository implements IEventRepository {
     })
   }
 
-  async findById(id: string): Promise<Result<Event | null, string>> {
-    const event = this.events.find(e => e.id == id) ?? null
-    return Ok(event) 
+  async findById(id: string): Promise<Result<Event | null, EventDetailError>> {
+    const event = this.events.get(id) ?? null
+    return Ok(event)
   }
 
-  async save(event: Event): Promise<Result<void, string>> {
-    this.events.push(event)
+  async findAll(): Promise<Result<Event[], EventDetailError>> {
+    return Ok(Array.from(this.events.values()))
+  }
+
+  async save(event: Event): Promise<Result<void, EventDetailError>> {
+    this.events.set(event.id, event)
     return Ok(undefined)
   }
 
-  async listPublishedUpcoming(now: Date) {
-    const events = this.events.filter((e) => {
-      const start = new Date(e.startDatetime);
-
-      return e.status === "published" && start > now;
-    });
-
-    return Ok(events);
+  async listPublishedUpcoming(now: Date): Promise<Result<Event[], EventDetailError>> {
+    const events = Array.from(this.events.values()).filter((e) => {
+      const start = new Date(e.startDatetime)
+      return e.status === "published" && start > now
+    })
+    return Ok(events)
   }
 
-  async searchPublishedUpcoming(term: string, now: Date) {
-
-    const events = this.events.filter((e) => {
-      const start = new Date(e.startDatetime);
+  async searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], EventDetailError>> {
+    const events = Array.from(this.events.values()).filter((e) => {
+      const start = new Date(e.startDatetime)
       if (e.status !== "published" || start <= now) {
-        return false;
+        return false
       }
       if (!term) {
-        return true;
+        return true
       }
       return (
         e.title.toLowerCase().includes(term) ||
         e.description.toLowerCase().includes(term) ||
         e.location.toLowerCase().includes(term)
-      );
-    });
-
-    return Ok(events);
+      )
+    })
+    return Ok(events)
   }
+<<<<<<< HEAD
+=======
+
+  async findByOrganizerId(organizerId: string): Promise<Result<Event[], EventDetailError>> {
+    const events = Array.from(this.events.values()).filter(e => e.organizerId === organizerId)
+    return Ok(events)
+  }
+
+  async update(event: Event): Promise<Result<Event, EventDetailError>> {
+    if (!this.events.has(event.id)) {
+      return Err(EventNotFound("Event not found."))
+    }
+    this.events.set(event.id, event)
+    return Ok(event)
+  }
+
+  async create(data: Omit<Event, "id" | "attendeeCount">): Promise<Result<Event, EventDetailError>> {
+    const event: Event = {
+      ...data,
+      id: randomUUID(),
+      attendeeCount: 0,
+    }
+    this.events.set(event.id, event)
+    return Ok(event)
+  }
+>>>>>>> dev
 }
 
 export function InMemoryEventRepository(): IEventRepository {

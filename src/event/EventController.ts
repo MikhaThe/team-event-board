@@ -1,19 +1,22 @@
 import { Request, Response } from "express";
-import type { IEventService, EventDetailError } from "./EventService";
+import type { IEventService } from "./EventService";
 import {
   getAuthenticatedUser,
   touchAppSession,
   type AppSessionStore,
 } from "../session/AppSession";
 import type { Event } from "./Event";
+import type { EventDetailError } from "../lib/error";
 import { ILoggingService } from "../service/LoggingService";
-import { touchAppSession } from "../session/AppSession";
 
 export interface IEventController {
   showEvent(req: Request, res: Response): Promise<void>;
   showEditEvent(req: Request, res: Response): Promise<void>;
   updateEvent(req: Request, res: Response): Promise<void>;
   searchEvents(req: Request, res: Response): Promise<void>;
+  showCreateForm(req: Request, res: Response): Promise<void>;
+  createEvent(req: Request, res: Response): Promise<void>;
+  listEvents(req: Request, res: Response): Promise<void>;
 }
 
 class EventController implements IEventController {
@@ -21,6 +24,10 @@ class EventController implements IEventController {
     private readonly service: IEventService,
     private readonly logger: ILoggingService
   ) {}
+
+  private isHtmx(req: Request): boolean {
+    return req.get("HX-Request") === "true";
+  }
 
   async showEvent(req: Request, res: Response): Promise<void> {
     const eventId = req.params.id as string;
@@ -36,16 +43,16 @@ class EventController implements IEventController {
       const error = result.value as EventDetailError;
 
       if (error.name === "EventNotFound") {
-        res.status(404).send(error.message);
+        res.status(404).render("partials/error", { message: error.message, layout: false });
         return;
       }
 
       if (error.name === "Forbidden") {
-        res.status(403).send(error.message);
+        res.status(403).render("partials/error", { message: error.message, layout: false });
         return;
       }
 
-      res.status(400).send("Unknown error.");
+      res.status(400).render("partials/error", { message: "Unknown error.", layout: false });
       return;
     }
 
@@ -72,31 +79,31 @@ class EventController implements IEventController {
       const error = result.value as EventDetailError;
 
       if (error.name === "EventNotFound") {
-        res.status(404).send(error.message);
+        res.status(404).render("partials/error", { message: error.message, layout: false });
         return;
       }
 
       if (error.name === "Forbidden") {
-        res.status(403).send(error.message);
+        res.status(403).render("partials/error", { message: error.message, layout: false });
         return;
       }
 
-      res.status(400).send("Unknown error.");
+      res.status(400).render("partials/error", { message: "Unknown error.", layout: false });
       return;
     }
 
     const browserSession = touchAppSession(req.session as AppSessionStore);
 
-    res.render("editEvent", {
+    res.render("partials/editEvent", {
       event: result.value,
       session: browserSession,
+      layout: false,
     });
   }
 
   async updateEvent(req: Request, res: Response): Promise<void> {
     const eventId = req.params.id as string;
     const user = getAuthenticatedUser(req.session);
-
     const updates = req.body;
 
     const result = await this.service.editEvent(
@@ -110,45 +117,142 @@ class EventController implements IEventController {
       const error = result.value as EventDetailError;
 
       if (error.name === "EventNotFound") {
-        res.status(404).send(error.message);
+        res.status(404).render("partials/error", { message: error.message, layout: false });
         return;
       }
 
       if (error.name === "Forbidden") {
-        res.status(403).send(error.message);
+        res.status(403).render("partials/error", { message: error.message, layout: false });
         return;
       }
 
-      res.status(400).send("Unknown error.");
+      res.status(400).render("partials/error", { message: "Unknown error.", layout: false });
       return;
     }
 
     res.redirect(`/events/${eventId}`);
   }
-  
+
+  async listEvents(req: Request, res: Response): Promise<void> {
+    const category =
+      typeof req.query.category === "string" ? req.query.category : undefined;
+    const date =
+      typeof req.query.date === "string" ? req.query.date : undefined;
+
+    const result = await this.service.getFilteredEvents(category, date);
+
+    if (!result.ok) {
+      res.status(500).render("partials/error", { message: result.value, layout: false });
+      return;
+    }
+
+    const browserSession = touchAppSession(req.session as AppSessionStore);
+
+    if (this.isHtmx(req)) {
+      res.render("partials/event-list", {
+        events: result.value,
+        layout: false,
+      });
+      return;
+    }
+
+    res.render("eventList", {
+      events: result.value,
+      selectedCategory: category ?? "",
+      selectedDate: date ?? "",
+      session: browserSession,
+    });
+  }
+
   async searchEvents(req: Request, res: Response): Promise<void> {
     const termRaw = req.query.q;
-    const term = Array.isArray(termRaw) ? termRaw[0] : termRaw;
-
-    const result = await this.service.searchEvents(String(term));
+    const term = Array.isArray(termRaw)
+      ? (typeof termRaw[0] === "string" ? termRaw[0] : null)
+      : typeof termRaw === "string"
+      ? termRaw
+      : null;
+    const result = await this.service.searchEvents(term);
 
     if (!result.ok) {
       const error = result.value as EventDetailError;
-      
+
       if (error.name === "EventNotFound") {
-        res.status(404).send(error.message);
+        res.status(404).render("partials/error", { message: error.message, layout: false });
         return;
       }
 
-      if (error.name === "Forbidden") {
-        res.status(403).send(error.message);
-        return;
-      }
-
-      res.status(400).send("Unknown error.");
+      res.status(400).render("partials/error", { message: "Unknown error.", layout: false });
       return;
     }
-    return;
+
+    const browserSession = touchAppSession(req.session as AppSessionStore);
+    res.render("eventList", { events: result.value, session: browserSession });
+  }
+
+  async showCreateForm(req: Request, res: Response): Promise<void> {
+    const session = touchAppSession(req.session as AppSessionStore);
+    const user = session.authenticatedUser;
+
+    if (!user || user.role === "user") {
+      res.status(403).render("partials/error", {
+        message: "You do not have permission to create events.",
+        layout: false,
+      });
+      return;
+    }
+
+    res.render("createEvent", {
+      session,
+      formData: {},
+      error: null,
+    });
+  }
+
+  async createEvent(req: Request, res: Response): Promise<void> {
+    const isHtmx = req.headers['hx-request'] === 'true';
+    const session = touchAppSession(req.session as AppSessionStore);
+    const user = session.authenticatedUser;
+
+    if (!user || user.role === "user") {
+      res.status(403).render("partials/error", {
+        message: "You do not have permission to create events.",
+        layout: false,
+      });
+      return;
+    }
+
+    const { title, description, location, category,
+            startDatetime, endDatetime, capacity } = req.body;
+
+    const result = await this.service.createEvent({
+      title,
+      description,
+      location,
+      category,
+      startDatetime,
+      endDatetime,
+      capacity: capacity ? Number(capacity) : undefined,
+      organizerId: user.userId,
+      organizerName: user.displayName,
+    });
+
+    if (!result.ok) {
+      const error = result.value as EventDetailError;
+      res.status(400).render("createEvent", {
+        session,
+        error: error.message,
+        formData: req.body,
+        layout: isHtmx ? false : undefined,
+      });
+      return;
+    }
+
+    if (isHtmx) {
+      res.setHeader('HX-Redirect', `/events/${result.value.id}`);
+      res.status(200).end();
+    } else {
+      res.redirect(`/events/${result.value.id}`);
+    }
   }
 }
 

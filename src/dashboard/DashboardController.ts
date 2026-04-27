@@ -36,14 +36,20 @@ class DashboardController implements IDashboardController {
     }
 
     const result = await this.service.getDashboard(user.userId);
+
     if (result.ok === false) {
       this.logger.error(`Dashboard fetch failed for user=${user.userId}: ${result.value.message}`);
-      res.status(500).redirect("/?error=dashboard_unavailable");
+      res.status(500).location("/?error=dashboard_unavailable").end();
       return;
     }
 
     this.logger.info(`Dashboard loaded for user=${user.userId}`);
     // Pass the view model to your template engine of choice.
+    // ;
+    if(req.headers["hx-request"] === "true") {
+      res.status(200).render("partials/dashboard-sections", { dashboard: result.value, session: req.session, layout: false });
+      return;
+    }
     res.status(200).render("dashboard", { dashboard: result.value, session: req.session });
   }
 }

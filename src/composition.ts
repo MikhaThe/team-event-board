@@ -13,9 +13,16 @@ import { InMemoryEventRepository } from "./event/EventRepository";
 import { CreateEventListController } from "./event/EventListController";
 import { CreateDashboardController } from "./dashboard/DashboardController";
 import { CreateDashboardService } from "./dashboard/DashboardService";
-import { CreateRSVPController } from "./rsvp/RSVPController";
+import { CreateRSVPController, RSVPController } from "./rsvp/RSVPController";
 import { CreateRSVPService } from "./rsvp/RSVPService";
 import { CreateRSVPRepository } from "./rsvp/RSVPRepository";
+<<<<<<< HEAD
+=======
+import { CreateAttendeeService } from "./attendee/AttendeeService";
+import { CreateAttendeeController } from "./attendee/AttendeeController";
+import { CreateOrganizerService } from "./organizerdashboard/OrganizerService";
+import { CreateOrganizerController } from "./organizerdashboard/OrganizerDashboard";
+>>>>>>> dev
 
 export function createComposedApp(logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
@@ -38,5 +45,11 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const dashboardService = CreateDashboardService(rsvpRepository, eventRepository);
   const dashboardController = CreateDashboardController(dashboardService, resolvedLogger);
 
-  return CreateApp(eventController, eventListController, authController, resolvedLogger, rsvpController, dashboardController);
+  // User dashboard wiring
+  const dashboardService = CreateDashboardService(rsvpRepository, eventRepository);
+  const dashboardController = CreateDashboardController(dashboardService, resolvedLogger);
+  const attendeeService = CreateAttendeeService(eventRepository, rsvpRepository);
+  const attendeeController = CreateAttendeeController(attendeeService, resolvedLogger);
+
+  return CreateApp(eventController, eventListController, authController, organizerController, resolvedLogger, rsvpController, dashboardController, attendeeController);
 }
