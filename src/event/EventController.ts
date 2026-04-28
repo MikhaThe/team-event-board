@@ -8,6 +8,7 @@ import {
 import type { Event } from "./Event";
 import type { EventDetailError } from "../lib/error";
 import { ILoggingService } from "../service/LoggingService";
+import { IRSVPRepository } from "../rsvp/RSVPRepository";
 
 export interface IEventController {
   showEvent(req: Request, res: Response): Promise<void>;
@@ -20,7 +21,8 @@ export interface IEventController {
 class EventController implements IEventController {
   constructor(
     private readonly service: IEventService,
-    private readonly logger: ILoggingService
+    private readonly logger: ILoggingService,
+    private readonly rsvpRepo: IRSVPRepository
   ) {}
 
   private isHtmx(req: Request): boolean {
@@ -56,10 +58,17 @@ class EventController implements IEventController {
 
     const event: Event = result.value;
     const browserSession = touchAppSession(req.session as AppSessionStore);
+    
+    const rsvpResult = user
+      ? await this.rsvpRepo.findByUserAndEvent(user.userId, eventId)
+      : null;
+    
+      const rsvpStatus = rsvpResult?.ok ? rsvpResult.value?.status ?? null : null;
 
     res.render("eventDetail", {
       event,
       session: browserSession,
+      rsvpStatus,
     });
   }
 
@@ -206,7 +215,8 @@ class EventController implements IEventController {
 
 export function CreateEventController(
   service: IEventService,
-  logger: ILoggingService
+  logger: ILoggingService,
+  rsvpRepo: IRSVPRepository
 ): IEventController {
-  return new EventController(service, logger);
+  return new EventController(service, logger, rsvpRepo);
 }
