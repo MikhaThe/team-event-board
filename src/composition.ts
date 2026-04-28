@@ -31,16 +31,16 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
-  // Event wiring
-  const eventRepository = CreatePrismaEventRepository();
-  const eventService = CreateEventService(eventRepository);
-  const eventController = CreateEventController(eventService, resolvedLogger);
-  const eventListController = CreateEventListController(eventService, resolvedLogger);
-
   // RSVP wiring
   const rsvpRepository = CreateRSVPRepository();
   const rsvpService = CreateRSVPService(rsvpRepository);
-  const rsvpController = CreateRSVPController(rsvpService, resolvedLogger);
+  const rsvpController = CreateRSVPController(rsvpService, resolvedLogger); 
+  
+  // Event wiring
+  const eventRepository = CreatePrismaEventRepository();
+  const eventService = CreateEventService(eventRepository);
+  const eventController = CreateEventController(eventService, resolvedLogger, rsvpRepository);
+  const eventListController = CreateEventListController(eventService, resolvedLogger);
 
   // Dashboard wiring
   const dashboardService = CreateDashboardService(rsvpRepository, eventRepository);
