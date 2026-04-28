@@ -32,13 +32,13 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
   // Event wiring (Feature 2 / Feature 6)
-  const eventRepository = InMemoryEventRepository();
-  const eventService = CreateEventService(eventRepository);
-  const eventController = CreateEventController(eventService, resolvedLogger);
-  const eventListController = CreateEventListController(eventService, resolvedLogger);
   const rsvpRepository = CreateRSVPRepository();
   const rsvpService = CreateRSVPService(rsvpRepository);
   const rsvpController = new RSVPController(rsvpService, resolvedLogger);
+  const eventRepository = InMemoryEventRepository();
+  const eventService = CreateEventService(eventRepository);
+  const eventController = CreateEventController(eventService, resolvedLogger, rsvpRepository);
+  const eventListController = CreateEventListController(eventService, resolvedLogger);
 
   // Organizer event wiring (Features 5 & 8)
   const organizerService = CreateOrganizerService(eventRepository, rsvpRepository);
