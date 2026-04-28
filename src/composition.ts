@@ -9,6 +9,7 @@ import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
 import { CreateEventController } from "./event/EventController";
 import { CreateEventService } from "./event/EventService";
+import { CreateInMemoryEventRepository } from "./event/EventRepository";
 import { CreateEventListController } from "./event/EventListController";
 import { CreateDashboardController } from "./dashboard/DashboardController";
 import { CreateDashboardService } from "./dashboard/DashboardService";
@@ -20,8 +21,10 @@ import { CreateAttendeeService } from "./attendee/AttendeeService";
 import { CreateAttendeeController } from "./attendee/AttendeeController";
 import { CreateOrganizerService } from "./organizerdashboard/OrganizerService";
 import { CreateOrganizerController } from "./organizerdashboard/OrganizerDashboard";
+import { PrismaClient } from "@prisma/client";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 
-export function createComposedApp(logger?: ILoggingService): IApp {
+export function createComposedApp(mode: "prisma" | "memory", logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
 
   // Authentication & authorization wiring
@@ -31,13 +34,22 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
+
   // RSVP wiring
   const rsvpRepository = CreateRSVPRepository();
   const rsvpService = CreateRSVPService(rsvpRepository);
   const rsvpController = CreateRSVPController(rsvpService, resolvedLogger); 
   
   // Event wiring
-  const eventRepository = CreatePrismaEventRepository();
+  const eventRepository = 
+    mode === "prisma" 
+      ? CreatePrismaEventRepository(
+          new PrismaClient({
+            adapter: new PrismaBetterSqlite3({
+              url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
+            }),
+          }),
+      ) : CreateInMemoryEventRepository();
   const eventService = CreateEventService(eventRepository);
   const eventController = CreateEventController(eventService, resolvedLogger, rsvpRepository);
   const eventListController = CreateEventListController(eventService, resolvedLogger);
