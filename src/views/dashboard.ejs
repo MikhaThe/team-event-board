@@ -1,0 +1,28 @@
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-bold text-slate-900">Your Dashboard</h1>
+
+    <button
+      hx-get="/dashboard"
+      hx-target="#dashboard-content"
+      hx-swap="outerHTML"
+      class="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+    >
+      Refresh
+    </button>
+  </div>
+
+  <!-- Dashboard Content (HTMX Target) -->
+  <div
+    id="dashboard-content"
+    hx-get="/dashboard"
+    hx-trigger="load, every 30s"
+    hx-swap="outerHTML"
+    class="space-y-6"
+  >
+    <%- include("partials/dashboardContent") %>
+  </div>
+
+</div>

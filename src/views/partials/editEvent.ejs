@@ -1,0 +1,10 @@
+<form 
+  hx-post="/events/<%= event.id %>/edit"
+  hx-target="#event-container"
+  hx-swap="innerHTML"
+>
+  <input name="title" value="<%= event.title %>" />
+  <textarea name="description"><%= event.description %></textarea>
+  <input name="location" value="<%= event.location %>" />
+  <button type="submit">Save</button>
+</form>
