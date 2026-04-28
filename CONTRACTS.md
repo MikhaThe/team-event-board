@@ -7,6 +7,22 @@ Integration Compromise (-10 pts).
 
 ---
 
+## How errors are typed in this codebase
+
+All errors follow this shape:
+  `{ name: string; message: string }`
+
+They are returned as `Err(value)` inside `Result<T, E>` —
+never thrown as exceptions.
+
+Controllers map error names to HTTP status codes:
+- `"EventNotFound"`  → 404
+- `"Forbidden"`      → 403
+- `"InvalidInput"`   → 400
+- `"InvalidState"`   → 409
+
+---
+
 ## EventService.createEvent(input)
 
 **Owner:** Taha Kiani (Feature 1)
@@ -81,6 +97,8 @@ requestingUserId: string,
 requestingUserRole: string,
 getUserDisplayName: (userId: string) => string
 ```
+
+> The `getUserDisplayName` parameter is a function injected by the controller. In Sprints 1–2 it resolves against the session user. In Sprint 3 it queries the Prisma User table.
 
 **Success:**
 ```ts

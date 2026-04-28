@@ -53,7 +53,16 @@ describe("EventController - updateEvent ONLY", () => {
       createEvent: jest.fn(),
     };
 
-    const controller = CreateEventController(mockService, mockLogger as any);
+    const mockRsvpRepo = {
+      findByEvent: jest.fn(),
+      findByUser: jest.fn(),
+      findByUserAndEvent: jest.fn().mockResolvedValue({ ok: true, value: null }),
+      countGoingByEvent: jest.fn(),
+      create: jest.fn(),
+      updateStatus: jest.fn(),
+    };
+
+    const controller = CreateEventController(mockService, mockLogger as any, mockRsvpRepo as any);
 
     app = express();  
     app.use(express.json());
