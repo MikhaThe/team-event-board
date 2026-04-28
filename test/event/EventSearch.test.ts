@@ -50,6 +50,7 @@ function makeFakeRepo(overrides: Partial<IEventRepository> = {}): IEventReposito
     update: jest.fn().mockResolvedValue(Ok(null)),
     listPublishedUpcoming: jest.fn().mockResolvedValue(Ok([])),
     searchPublishedUpcoming: jest.fn().mockResolvedValue(Ok([])),
+    create: jest.fn().mockResolvedValue(Ok(null)),
     ...overrides,
   };
 }

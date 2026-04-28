@@ -124,7 +124,7 @@ describe("DashboardService", () => {
     rsvpRepo.findByUser.mockResolvedValue({
       ok: false,
       value: {
-        name: "RSVPNotFound",
+        name: "RSVP Not Found" as const,
         message: "Database connection failed",
       },
     });
@@ -142,7 +142,7 @@ describe("DashboardService", () => {
 
     eventRepo.findAll.mockResolvedValue({
       ok: false,
-      value: "Database connection failed",
+      value: { name: "EventNotFound" as const, message: "Database connection failed" },
     });
 
     const result = await service.getDashboard("u1");

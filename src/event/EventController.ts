@@ -15,6 +15,8 @@ export interface IEventController {
   showEditEvent(req: Request, res: Response): Promise<void>;
   updateEvent(req: Request, res: Response): Promise<void>;
   searchEvents(req: Request, res: Response): Promise<void>;
+  showCreateForm(req: Request, res: Response): Promise<void>;
+  createEvent(req: Request, res: Response): Promise<void>;
   listEvents(req: Request, res: Response): Promise<void>;
 }
 
@@ -137,21 +139,7 @@ class EventController implements IEventController {
       return;
     }
 
-    const eventResult = await this.service.getEventDetail(
-      eventId,
-      user?.userId,
-      user?.role,
-    );
-
-    if (!eventResult.ok) {
-      res.status(500).render("partials/error", { message: "Could not reload event.", layout: false });
-      return;
-    }
-
-    res.render("eventDetail", {
-      event: eventResult.value,
-      layout: false,
-    });
+    res.redirect(`/events/${eventId}`);
   }
 
   async listEvents(req: Request, res: Response): Promise<void> {
@@ -187,11 +175,11 @@ class EventController implements IEventController {
 
   async searchEvents(req: Request, res: Response): Promise<void> {
     const termRaw = req.query.q;
-    const term = Array.isArray(termRaw) 
-    ? (typeof termRaw[0] === "string" ? termRaw[0] : null)
-    : typeof termRaw === "string" 
-    ? termRaw 
-    : null;
+    const term = Array.isArray(termRaw)
+      ? (typeof termRaw[0] === "string" ? termRaw[0] : null)
+      : typeof termRaw === "string"
+      ? termRaw
+      : null;
     const result = await this.service.searchEvents(term);
 
     if (!result.ok) {
@@ -206,10 +194,74 @@ class EventController implements IEventController {
       return;
     }
 
-    res.render("partials/event-list", {
-      events: result.value,
-      layout: false,
+    const browserSession = touchAppSession(req.session as AppSessionStore);
+    res.render("eventList", { events: result.value, session: browserSession });
+  }
+
+  async showCreateForm(req: Request, res: Response): Promise<void> {
+    const session = touchAppSession(req.session as AppSessionStore);
+    const user = session.authenticatedUser;
+
+    if (!user || user.role === "user") {
+      res.status(403).render("partials/error", {
+        message: "You do not have permission to create events.",
+        layout: false,
+      });
+      return;
+    }
+
+    res.render("createEvent", {
+      session,
+      formData: {},
+      error: null,
     });
+  }
+
+  async createEvent(req: Request, res: Response): Promise<void> {
+    const isHtmx = req.headers['hx-request'] === 'true';
+    const session = touchAppSession(req.session as AppSessionStore);
+    const user = session.authenticatedUser;
+
+    if (!user || user.role === "user") {
+      res.status(403).render("partials/error", {
+        message: "You do not have permission to create events.",
+        layout: false,
+      });
+      return;
+    }
+
+    const { title, description, location, category,
+            startDatetime, endDatetime, capacity } = req.body;
+
+    const result = await this.service.createEvent({
+      title,
+      description,
+      location,
+      category,
+      startDatetime,
+      endDatetime,
+      capacity: capacity ? Number(capacity) : undefined,
+      organizerId: user.userId,
+      organizerName: user.displayName,
+    });
+
+    if (!result.ok) {
+      const error = result.value as EventDetailError;
+      res.status(400).render("createEvent", {
+        session,
+        error: error.message,
+        formData: req.body,
+        layout: isHtmx ? false : undefined,
+      });
+      return;
+    }
+
+    if (isHtmx) {
+      res.setHeader('HX-Redirect', `/events/${result.value.id}`);
+      res.status(200).end();
+    } else {
+      res.redirect(`/events/${result.value.id}`);
+    }
   }
 }
 

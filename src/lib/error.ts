@@ -2,6 +2,7 @@ export type EventDetailError =
   | { name: "EventNotFound"; message: string }
   | { name: "Forbidden"; message: string }
   | { name: "InvalidTransition"; message: string }
+  | { name: "InvalidInput"; message: string }
 
 export type FilterError =
   | { name: "InvalidCategory"; message: string }
@@ -39,6 +40,11 @@ export const Forbidden = (message: string): EventDetailError => ({
 
 export const InvalidTransition = (message: string): EventDetailError => ({
   name: "InvalidTransition",
+  message,
+})
+
+export const InvalidInput = (message: string): EventDetailError => ({
+  name: "InvalidInput",
   message,
 })
 

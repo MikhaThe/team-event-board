@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import type { Event } from "./Event"
 import type { Result } from "../lib/result"
 import { type EventDetailError, EventNotFound } from "../lib/error"
@@ -11,13 +12,14 @@ export interface IEventRepository {
   update(event: Event): Promise<Result<Event, EventDetailError>>
   listPublishedUpcoming(now: Date): Promise<Result<Event[], EventDetailError>>
   searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], EventDetailError>>
+  create(data: Omit<Event, "id" | "attendeeCount">): Promise<Result<Event, EventDetailError>>
 }
 
 class EventRepository implements IEventRepository {
-  private events: Event[] = []
+  private readonly events: Map<string, Event> = new Map()
 
   constructor() {
-    this.events.push({
+    this.events.set("1", {
       id: "1",
       title: "Test Event",
       description: "This is a test event for Feature 2.",
@@ -32,7 +34,7 @@ class EventRepository implements IEventRepository {
       capacity: 20,
     })
 
-    this.events.push({
+    this.events.set("2", {
       id: "2",
       title: "Music Night",
       description: "Live music event on campus.",
@@ -47,7 +49,7 @@ class EventRepository implements IEventRepository {
       capacity: 50,
     })
 
-    this.events.push({
+    this.events.set("3", {
       id: "3",
       title: "Private Draft Event",
       description: "This is a draft event.",
@@ -64,26 +66,21 @@ class EventRepository implements IEventRepository {
   }
 
   async findById(id: string): Promise<Result<Event | null, EventDetailError>> {
-    const event = this.events.find(e => e.id === id) ?? null
+    const event = this.events.get(id) ?? null
     return Ok(event)
   }
 
   async findAll(): Promise<Result<Event[], EventDetailError>> {
-    return Ok([...this.events])
+    return Ok(Array.from(this.events.values()))
   }
 
   async save(event: Event): Promise<Result<void, EventDetailError>> {
-    const index = this.events.findIndex(e => e.id === event.id)
-    if (index !== -1) {
-      this.events[index] = event
-    } else {
-      this.events.push(event)
-    }
+    this.events.set(event.id, event)
     return Ok(undefined)
   }
 
   async listPublishedUpcoming(now: Date): Promise<Result<Event[], EventDetailError>> {
-    const events = this.events.filter((e) => {
+    const events = Array.from(this.events.values()).filter((e) => {
       const start = new Date(e.startDatetime)
       return e.status === "published" && start > now
     })
@@ -91,10 +88,14 @@ class EventRepository implements IEventRepository {
   }
 
   async searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], EventDetailError>> {
-    const events = this.events.filter((e) => {
+    const events = Array.from(this.events.values()).filter((e) => {
       const start = new Date(e.startDatetime)
-      if (e.status !== "published" || start <= now) return false
-      if (!term) return true
+      if (e.status !== "published" || start <= now) {
+        return false
+      }
+      if (!term) {
+        return true
+      }
       return (
         e.title.toLowerCase().includes(term) ||
         e.description.toLowerCase().includes(term) ||
@@ -105,16 +106,25 @@ class EventRepository implements IEventRepository {
   }
 
   async findByOrganizerId(organizerId: string): Promise<Result<Event[], EventDetailError>> {
-    const events = this.events.filter(e => e.organizerId === organizerId)
+    const events = Array.from(this.events.values()).filter(e => e.organizerId === organizerId)
     return Ok(events)
   }
 
   async update(event: Event): Promise<Result<Event, EventDetailError>> {
-    const index = this.events.findIndex(e => e.id === event.id)
-    if (index === -1) {
+    if (!this.events.has(event.id)) {
       return Err(EventNotFound("Event not found."))
     }
-    this.events[index] = event
+    this.events.set(event.id, event)
+    return Ok(event)
+  }
+
+  async create(data: Omit<Event, "id" | "attendeeCount">): Promise<Result<Event, EventDetailError>> {
+    const event: Event = {
+      ...data,
+      id: randomUUID(),
+      attendeeCount: 0,
+    }
+    this.events.set(event.id, event)
     return Ok(event)
   }
 }

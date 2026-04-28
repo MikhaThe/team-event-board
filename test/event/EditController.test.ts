@@ -2,10 +2,12 @@ import request from "supertest";
 import express from "express";
 import session from "express-session";
 import bodyParser from "body-parser";
-
+import path from "path"
 import { CreateEventController } from "../../src/event/EventController";
 import type { IEventService } from "../../src/event/EventService";
 import { Ok, Err } from "../../src/lib/result";
+import { Forbidden } from "../../src/lib/error";
+import { EventNotFound } from "../../src/lib/error";
 
 // ---- Mock logger ----
 const mockLogger = {
@@ -46,6 +48,9 @@ describe("EventController - updateEvent ONLY", () => {
       editEvent: jest.fn(),
       saveEvent: jest.fn(),
       searchEvents: jest.fn(),
+      publishEvent: jest.fn(),
+      cancelEvent: jest.fn(),
+      createEvent: jest.fn(),
     };
 
     const controller = CreateEventController(mockService, mockLogger as any);
@@ -62,13 +67,15 @@ describe("EventController - updateEvent ONLY", () => {
     app.post("/events/:id", (req, res) =>
       controller.updateEvent(req, res)
     );
+    app.set("view engine", "ejs");
+    app.set("views", path.join(__dirname, "../../src/views"));
   });
 
   // -------------------------------
   // ✅ SUCCESS
   // -------------------------------
   it("redirects to event page on successful edit", async () => {
-    mockService.editEvent.mockResolvedValue(Ok(undefined));
+    mockService.editEvent.mockResolvedValue(Ok(undefined) as any);
 
     const res = await request(app)
       .post("/events/1")
@@ -90,7 +97,7 @@ describe("EventController - updateEvent ONLY", () => {
   // -------------------------------
   it("returns 403 if user is not allowed to edit", async () => {
     mockService.editEvent.mockResolvedValue(
-      Err({ name: "Forbidden", message: "Not allowed" })
+      Err(Forbidden("Not allowed to edit this event."))
     );
 
     const res = await request(app)
@@ -106,7 +113,7 @@ describe("EventController - updateEvent ONLY", () => {
   // -------------------------------
   it("returns 404 if event does not exist", async () => {
     mockService.editEvent.mockResolvedValue(
-      Err({ name: "EventNotFound", message: "Event missing" })
+      Err(EventNotFound("Event not found."))
     );
 
     const res = await request(app)
@@ -114,7 +121,7 @@ describe("EventController - updateEvent ONLY", () => {
       .send({ title: "Update" });
 
     expect(res.status).toBe(404);
-    expect(res.text).toContain("Event missing");
+    expect(res.text).toContain("Event not found");
   });
 
   // -------------------------------
