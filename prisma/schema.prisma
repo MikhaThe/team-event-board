@@ -22,3 +22,12 @@ model Event {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+
+model RSVP {
+  userId    String      
+  eventId   String      
+  status    RSVPStatus  @default(null)  
+  id        String      @id @default(autoincrement())
+  createdAt DateTime    @default(now())
+}
+
