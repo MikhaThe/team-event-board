@@ -25,7 +25,7 @@ export interface IAttendeeService {
     eventId: string,
     requestingUserId: string,
     requestingUserRole: string,
-    getUserDisplayName: (userId: string) => string,
+    getUserDisplayName: (userId: string) => Promise<string>,
   ): Promise<Result<AttendeeListResult, AttendeeError>>;
 }
 
@@ -40,7 +40,7 @@ class AttendeeService implements IAttendeeService {
     eventId: string,
     requestingUserId: string,
     requestingUserRole: string,
-    getUserDisplayName: (userId: string) => string,
+    getUserDisplayName: (userId: string) => Promise<string>,
   ): Promise<Result<AttendeeListResult, AttendeeError>> {
 
     // 1. Load the event
@@ -68,10 +68,12 @@ class AttendeeService implements IAttendeeService {
     const rsvps = rsvpResult.value;
 
     // 4. Enrich with display names
-    const enriched: EnrichedRSVP[] = rsvps.map((r) => ({
-      ...r,
-      displayName: getUserDisplayName(r.userId),
-    }));
+    const enriched: EnrichedRSVP[] = await Promise.all(
+      rsvps.map(async (r) => ({
+        ...r,
+        displayName: await getUserDisplayName(r.userId),
+      })),
+    );
 
     // 5. Sort each group by createdAt ascending
     const byDate = (a: EnrichedRSVP, b: EnrichedRSVP) =>

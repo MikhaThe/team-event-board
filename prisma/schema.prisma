@@ -21,4 +21,17 @@ model Event {
   capacity      Int?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  rsvps         RSVP[]
+}
+
+model RSVP {
+  id        String   @id @default(uuid())
+  eventId   String
+  userId    String
+  status    String   // "going" | "waitlisted" | "cancelled"
+  createdAt DateTime @default(now())
+
+  event     Event    @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId])
 }
