@@ -11,6 +11,7 @@ import { RSVPError } from "../lib/error";
 
 export interface IRSVPController {
   toggleRSVPFromForm(
+    req: Request,
     res: Response,
     input: { eventId: string; capacity: number },
     session: IAppBrowserSession,
@@ -30,6 +31,7 @@ export class RSVPController implements IRSVPController {
   }
 
   async toggleRSVPFromForm(
+    req: Request,
     res: Response,
     input: { eventId: string; capacity: number },
     session: IAppBrowserSession,
@@ -66,6 +68,12 @@ export class RSVPController implements IRSVPController {
     this.logger.info(
       `RSVP updated: user=${user.userId} event=${rsvp.eventId} status=${rsvp.status}`,
     );
+    if (req.headers.get("hx-request")) {
+      return res.render("partials/rsvp", {
+        event: { id: input.eventId, capacity: input.capacity },
+        rsvp,
+      });
+    }
 
     // Redirect back to event page (typical UX)
     res.redirect(`/events/${rsvp.eventId}`);
