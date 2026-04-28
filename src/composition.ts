@@ -34,13 +34,13 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   // Event wiring
   const eventRepository = CreatePrismaEventRepository();
   const eventService = CreateEventService(eventRepository);
-  const eventController = CreateEventController(eventService, resolvedLogger);
   const eventListController = CreateEventListController(eventService, resolvedLogger);
 
   // RSVP wiring
   const rsvpRepository = CreateRSVPRepository();
   const rsvpService = CreateRSVPService(rsvpRepository);
   const rsvpController = CreateRSVPController(rsvpService, resolvedLogger);
+  const eventController = CreateEventController(eventService, resolvedLogger, rsvpRepository);
 
   // Dashboard wiring
   const dashboardService = CreateDashboardService(rsvpRepository, eventRepository);
