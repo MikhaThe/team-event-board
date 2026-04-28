@@ -14,7 +14,7 @@ import { CreateDashboardController } from "./dashboard/DashboardController";
 import { CreateDashboardService } from "./dashboard/DashboardService";
 import { CreateRSVPController } from "./rsvp/RSVPController";
 import { CreateRSVPService } from "./rsvp/RSVPService";
-import { CreateRSVPRepository } from "./rsvp/RSVPRepository";
+import { CreatePrismaRSVPRepository } from "./rsvp/PrismaRSVPRepository";
 import { CreatePrismaEventRepository } from "./event/PrismaEventRepository";
 import { CreateAttendeeService } from "./attendee/AttendeeService";
 import { CreateAttendeeController } from "./attendee/AttendeeController";
@@ -32,7 +32,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
    // RSVP wiring
-  const rsvpRepository = CreateRSVPRepository();
+  const rsvpRepository = CreatePrismaRSVPRepository();
   const rsvpService = CreateRSVPService(rsvpRepository);
   const rsvpController = CreateRSVPController(rsvpService, resolvedLogger);
 
