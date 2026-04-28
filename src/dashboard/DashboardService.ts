@@ -1,5 +1,6 @@
 import type { IEventRepository } from "../event/EventRepository";
 import type { IRSVPRepository } from "../rsvp/RSVPRepository";
+import type { IRSVPRecord } from "../rsvp/RSVP";
 import type { IDashboardView, IDashboardEvent } from "./DashboardEvent";
 import { type Result, Ok, Err } from "../lib/result";
 import { UnexpectedDependencyError } from "../auth/errors";
@@ -28,10 +29,10 @@ class DashboardService implements IDashboardService {
 
     const eventResult = await this.eventRepo.findAll();
     if (eventResult.ok === false) {
-      return Err(UnexpectedDependencyError(eventResult.value));
+      return Err(UnexpectedDependencyError(eventResult.value.message));
     }
 
-    const rsvpedIds = new Set(rsvps.map((r) => r.eventId));
+    const rsvpedIds = new Set(rsvps.map((r: IRSVPRecord) => r.eventId));
     const eventMap = new Map(
       eventResult.value
         .filter((e) => rsvpedIds.has(e.id))

@@ -1,0 +1,71 @@
+<div id="create-event-form" class="max-w-2xl mx-auto mt-8 p-6">
+  <h1 class="text-2xl font-bold mb-6">Create New Event</h1>
+
+  <% if (error) { %>
+    <div class="bg-red-100 text-red-700 border border-red-300 rounded p-3 mb-4">
+      <%= error %>
+    </div>
+  <% } %>
+
+  <form hx-post="/events" hx-target="#create-event-form" hx-swap="outerHTML" class="space-y-4">
+
+    <div>
+      <label class="block text-sm font-medium mb-1">Title *</label>
+      <input type="text" name="title" value="<%= formData.title ?? '' %>"
+             class="w-full border rounded px-3 py-2" required />
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-1">Description</label>
+      <textarea name="description" rows="4"
+                class="w-full border rounded px-3 py-2"><%= formData.description ?? '' %></textarea>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-1">Location *</label>
+      <input type="text" name="location" value="<%= formData.location ?? '' %>"
+             class="w-full border rounded px-3 py-2" required />
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-1">Category *</label>
+      <select name="category" class="w-full border rounded px-3 py-2">
+        <% ["Social","Educational","Volunteer","Sports","Arts","Music","School","Other"].forEach(cat => { %>
+          <option value="<%= cat %>"
+            <%= (formData.category === cat) ? "selected" : "" %>>
+            <%= cat %>
+          </option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-1">Start Date & Time *</label>
+      <input type="datetime-local" name="startDatetime"
+             value="<%= formData.startDatetime ?? '' %>"
+             class="w-full border rounded px-3 py-2" required />
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-1">End Date & Time *</label>
+      <input type="datetime-local" name="endDatetime"
+             value="<%= formData.endDatetime ?? '' %>"
+             class="w-full border rounded px-3 py-2" required />
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-1">
+        Capacity (leave blank for unlimited)
+      </label>
+      <input type="number" name="capacity" min="1"
+             value="<%= formData.capacity ?? '' %>"
+             class="w-full border rounded px-3 py-2" />
+    </div>
+
+    <button type="submit"
+            class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+      Create Event
+    </button>
+
+  </form>
+</div>

@@ -16,5 +16,14 @@
     <button hx-get="/events/<%= event.id %>/edit" hx-target="#event-container" hx-swap="innerHTML">
     Edit
     </button>
+    <div id="rsvp-container">
+        <%- include('partials/rsvpButton', {
+            eventId: event.id,
+            capacity: event.capacity ?? 0,
+            rsvpStatus: rsvpStatus,
+            error: null
+        }) %>
+    </div>
 </div>
+
 

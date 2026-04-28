@@ -1,15 +1,15 @@
-import type { Response } from "express";
+import type { Request, Response } from "express";
 import type { IRSVPService } from "./RSVPService";
 import type { ILoggingService } from "../service/LoggingService";
 import {
   getAuthenticatedUser,
   type IAppBrowserSession,
 } from "../session/AppSession";
-import type { AuthError } from "../auth/errors";
-import { create } from "node:domain";
+import { RSVPError } from "../lib/error";
 
 export interface IRSVPController {
   toggleRSVPFromForm(
+    req: Request,
     res: Response,
     input: { eventId: string; capacity: number },
     session: IAppBrowserSession,
@@ -22,13 +22,18 @@ export class RSVPController implements IRSVPController {
     private readonly logger: ILoggingService,
   ) {}
 
-  private mapErrorStatus(error: AuthError): number {
-    if (error.name === "AuthorizationRequired") return 403;
-    if (error.name === "ValidationError") return 400;
+  private isHtmxRequest(req: Request): boolean {
+      return req.get("HX-Request") === "true";
+  }
+
+  private mapErrorStatus(error: RSVPError): number {
+    if (error.name === "Invalid RSVP") return 400;
+    if (error.name === "RSVP Not Found") return 404
     return 500;
   }
 
   async toggleRSVPFromForm(
+    req: Request,
     res: Response,
     input: { eventId: string; capacity: number },
     session: IAppBrowserSession,
@@ -60,12 +65,24 @@ export class RSVPController implements IRSVPController {
       return;
     }
 
+
     const rsvp = result.value;
 
     this.logger.info(
       `RSVP updated: user=${user.userId} event=${rsvp.eventId} status=${rsvp.status}`,
     );
 
+    if (this.isHtmxRequest(req)) {
+      res.status(200).render("partials/rsvpButton", {
+        eventId: rsvp.eventId,
+        capacity: input.capacity,
+        rsvpStatus: rsvp.status,
+        error: null,
+        layout: false,
+      });
+      return;
+    }
+    
     // Redirect back to event page (typical UX)
     res.redirect(`/events/${rsvp.eventId}`);
   }

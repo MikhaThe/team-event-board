@@ -1,6 +1,6 @@
 <h1>Events</h1>
 
-<form method="GET" action="/events">
+<form id="filter-form">
   <div>
     <label for="category">Category:</label>
     <input
@@ -8,6 +8,12 @@
       id="category"
       name="category"
       value="<%= selectedCategory %>"
+      hx-get="/events"
+      hx-trigger="input changed delay:300ms"
+      hx-target="#event-list"
+      hx-swap="innerHTML"
+      hx-include="#filter-form"
+      hx-push-url="true"
     />
   </div>
 
@@ -18,24 +24,18 @@
       id="date"
       name="date"
       value="<%= selectedDate %>"
+      hx-get="/events"
+      hx-trigger="change"
+      hx-target="#event-list"
+      hx-swap="innerHTML"
+      hx-include="#filter-form"
+      hx-push-url="true"
     />
   </div>
-
-  <button type="submit">Filter</button>
 </form>
 
 <hr />
 
-<% if (events.length === 0) { %>
-  <p>No matching published events found.</p>
-<% } %>
-
-<ul>
-  <% events.forEach((event) => { %>
-    <li>
-      <a href="/events/<%= event.id %>"><%= event.title %></a>
-      - <%= event.category %>
-      - <%= event.startDatetime %>
-    </li>
-  <% }) %>
-</ul>
+<div id="event-list">
+  <%- include('partials/event-list', { events: events }) %>
+</div>
