@@ -23,11 +23,17 @@ model Event {
   updatedAt     DateTime @updatedAt
 }
 
+enum RSVPStatus {
+  GOING
+  WAITLISTED
+  CANCELLED
+}
+
 model RSVP {
   userId    String      
   eventId   String      
-  status    RSVPStatus  @default(null)  
-  id        String      @id @default(autoincrement())
+  status    RSVPStatus?  
+  id        String      @id
   createdAt DateTime    @default(now())
 }
 

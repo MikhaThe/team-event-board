@@ -16,12 +16,10 @@ CREATE TABLE "Event" (
     "updatedAt" DATETIME NOT NULL
 );
 
-CREATE TYPE user_status AS ENUM ('going', 'waitlisted', 'cancelled');
-
-CREATE TABLE "RSVP" {
+CREATE TABLE "RSVP" (
     "userId" TEXT NOT NULL,
     "eventID" TEXT NOT NULL,
-    "status" user_status,
+    "status" TEXT CHECK(status IN ('going', 'waitlisted', 'cancelled')),
     "id" TEXT NOT NULL PRIMARY KEY,
-    "createdAT" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-}
+    "createdAT" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
