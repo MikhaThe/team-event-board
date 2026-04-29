@@ -252,5 +252,5 @@ export class EventService implements IEventService {
 export function CreateEventService(
   eventRepository: IEventRepository,
 ): IEventService {
-  return new EventService(eventRepository)
+  return new EventService(eventRepository);
 }
