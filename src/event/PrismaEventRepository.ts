@@ -3,32 +3,32 @@ import type { Event } from "./Event"
 import type { IEventRepository } from "./EventRepository"
 import { Ok, Err } from "../lib/result"
 import type { Result } from "../lib/result"
-import { EventNotFound } from "../lib/error"
+import { EventNotFound, InvalidInput, InvalidTransition } from "../lib/error"
 import type { EventDetailError } from "../lib/error"
 
 const prisma = new PrismaClient()
 
 export class PrismaEventRepository implements IEventRepository {
-  async findById(id: string): Promise<Result<Event | null, string>> {
+  async findById(id: string): Promise<Result<Event | null, EventDetailError>> {
     try {
       const event = await prisma.event.findUnique({ where: { id } })
       if (!event) return Ok(null)
       return Ok(this.toEvent(event))
     } catch {
-      return Err("Failed to find event.")
+      return Err(EventNotFound("Failed to find event."))
     }
   }
 
-  async findAll(): Promise<Result<Event[], string>> {
+  async findAll(): Promise<Result<Event[], EventDetailError>> {
     try {
       const events = await prisma.event.findMany()
       return Ok(events.map(this.toEvent))
     } catch {
-      return Err("Failed to fetch events.")
+      return Err(EventNotFound("Failed to fetch events."))
     }
   }
 
-  async save(event: Event): Promise<Result<void, string>> {
+  async save(event: Event): Promise<Result<void, EventDetailError>> {
     try {
       await prisma.event.upsert({
         where: { id: event.id },
@@ -62,11 +62,11 @@ export class PrismaEventRepository implements IEventRepository {
       })
       return Ok(undefined)
     } catch {
-      return Err("Failed to save event.")
+      return Err(InvalidInput("Failed to save event."))
     }
   }
 
-  async listPublishedUpcoming(now: Date): Promise<Result<Event[], string>> {
+  async listPublishedUpcoming(now: Date): Promise<Result<Event[], EventDetailError>> {
     try {
       const events = await prisma.event.findMany({
         where: {
@@ -76,11 +76,11 @@ export class PrismaEventRepository implements IEventRepository {
       })
       return Ok(events.map(this.toEvent))
     } catch {
-      return Err("Failed to fetch events.")
+      return Err(InvalidTransition("Failed to fetch events."))
     }
   }
 
-  async searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], string>> {
+  async searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], EventDetailError>> {
     try {
       const events = await prisma.event.findMany({
         where: {
@@ -95,20 +95,20 @@ export class PrismaEventRepository implements IEventRepository {
       })
       return Ok(events.map(this.toEvent))
     } catch {
-      return Err("Failed to search events.")
+      return Err(EventNotFound("Failed to search events."))
     }
   }
 
-  async findByOrganizerId(organizerId: string): Promise<Result<Event[], string>> {
+  async findByOrganizerId(organizerId: string): Promise<Result<Event[], EventDetailError>> {
     try {
       const events = await prisma.event.findMany({ where: { organizerId } })
       return Ok(events.map(this.toEvent))
     } catch {
-      return Err("Failed to fetch events.")
+      return Err(EventNotFound("Failed to fetch events."))
     }
   }
 
-  async update(event: Event): Promise<Result<Event, string>> {
+  async update(event: Event): Promise<Result<Event, EventDetailError>> {
     try {
       const updated = await prisma.event.update({
         where: { id: event.id },
@@ -128,11 +128,11 @@ export class PrismaEventRepository implements IEventRepository {
       })
       return Ok(this.toEvent(updated))
     } catch {
-      return Err("Failed to update event.")
+      return Err(InvalidTransition("Failed to update event."))
     }
   }
 
-  async create(data: Omit<Event, "id" | "attendeeCount">): Promise<Result<Event, string>> {
+  async create(data: Omit<Event, "id" | "attendeeCount">): Promise<Result<Event, EventDetailError>> {
     try {
       const event = await prisma.event.create({
         data: {
@@ -150,7 +150,7 @@ export class PrismaEventRepository implements IEventRepository {
       })
       return Ok(this.toEvent(event))
     } catch {
-      return Err("Failed to create event.")
+      return Err(InvalidInput("Failed to create event."))
     }
   }
 
