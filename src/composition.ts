@@ -16,6 +16,8 @@ import { CreateRSVPController } from "./rsvp/RSVPController";
 import { CreateRSVPService } from "./rsvp/RSVPService";
 import { CreatePrismaRSVPRepository } from "./rsvp/PrismaRSVPRepository";
 import { CreatePrismaEventRepository } from "./event/PrismaEventRepository";
+import { InMemoryEventRepository } from "./event/EventRepository";
+import { CreateRSVPRepository } from "./rsvp/RSVPRepository";
 import { CreateAttendeeService } from "./attendee/AttendeeService";
 import { CreateAttendeeController } from "./attendee/AttendeeController";
 import { CreateOrganizerService } from "./organizerdashboard/OrganizerService";
@@ -31,11 +33,10 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
-  // Event wiring
-  const eventRepository = CreatePrismaEventRepository();
-
-  // RSVP repository (declared before eventController — needed as 3rd arg)
-  const rsvpRepository = CreatePrismaRSVPRepository();
+  // Data repositories — in-memory for tests, Prisma for production
+  const isTest = process.env.NODE_ENV === "test";
+  const eventRepository = isTest ? InMemoryEventRepository() : CreatePrismaEventRepository();
+  const rsvpRepository = isTest ? CreateRSVPRepository() : CreatePrismaRSVPRepository();
 
   const eventService = CreateEventService(eventRepository);
   const eventController = CreateEventController(eventService, resolvedLogger, rsvpRepository);
