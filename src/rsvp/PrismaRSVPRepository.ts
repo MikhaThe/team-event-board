@@ -1,10 +1,10 @@
 import type { IRSVPRecord, RSVPStatus } from "./RSVP";
 import  { type Result, Ok, Err} from "../lib/result"
 import { RSVPNotFound, UnexpectedRSVPError, type RSVPError } from "../lib/error"
-import { PrismaClient } from "@prisma/client"
+import { prisma } from "../lib/prismaClient"
 import { IRSVPRepository } from "./RSVPRepository";
 
-const prisma = new PrismaClient()
+
 
 export class PrismaRSVPRepository implements IRSVPRepository {
     async findByEvent(eventId: string): Promise<Result<IRSVPRecord[], RSVPError>> {
