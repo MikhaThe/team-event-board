@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto"
 import type { Event } from "./Event"
 import type { Result } from "../lib/result"
-import { type EventDetailError, EventNotFound } from "../lib/error"
 import { Ok, Err } from "../lib/result"
 
 export interface IEventRepository {

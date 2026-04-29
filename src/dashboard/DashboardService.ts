@@ -29,7 +29,7 @@ class DashboardService implements IDashboardService {
 
     const eventResult = await this.eventRepo.findAll();
     if (eventResult.ok === false) {
-      return Err(UnexpectedDependencyError(eventResult.value.message));
+      return Err(UnexpectedDependencyError(eventResult.value));
     }
 
     const rsvpedIds = new Set(rsvps.map((r: IRSVPRecord) => r.eventId));

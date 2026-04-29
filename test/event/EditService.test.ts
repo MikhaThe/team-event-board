@@ -112,7 +112,7 @@ describe("EventService - editEvent & saveEvent", () => {
 
     it("returns error if save fails", async () => {
       mockRepo.findById.mockResolvedValue(Ok(baseEvent));
-      mockRepo.save.mockResolvedValue(Err({ name: "Forbidden" as const, message: "fail" }));
+      mockRepo.save.mockResolvedValue(Err("fail"));
 
       const result = await service.editEvent(
         "1",
@@ -139,7 +139,7 @@ describe("EventService - editEvent & saveEvent", () => {
     });
 
     it("returns error if save fails", async () => {
-      mockRepo.save.mockResolvedValue(Err({ name: "Forbidden" as const, message: "fail" }));
+      mockRepo.save.mockResolvedValue(Err("fail"));
 
       const result = await service.saveEvent(baseEvent);
 

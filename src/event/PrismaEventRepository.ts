@@ -2,31 +2,29 @@ import type { Event } from "./Event"
 import type { IEventRepository } from "./EventRepository"
 import { Ok, Err } from "../lib/result"
 import type { Result } from "../lib/result"
-import { EventNotFound } from "../lib/error"
-import type { EventDetailError } from "../lib/error"
 import { prisma } from "../lib/prismaClient"
 
 export class PrismaEventRepository implements IEventRepository {
-  async findById(id: string): Promise<Result<Event | null, EventDetailError>> {
+  async findById(id: string): Promise<Result<Event | null, string>> {
     try {
       const event = await prisma.event.findUnique({ where: { id } })
       if (!event) return Ok(null)
       return Ok(this.toEvent(event))
     } catch {
-      return Err(EventNotFound("Failed to find event."))
+      return Err("Failed to find event.")
     }
   }
 
-  async findAll(): Promise<Result<Event[], EventDetailError>> {
+  async findAll(): Promise<Result<Event[], string>> {
     try {
       const events = await prisma.event.findMany()
       return Ok(events.map(this.toEvent))
     } catch {
-      return Err(EventNotFound("Failed to fetch events."))
+      return Err("Failed to fetch events.")
     }
   }
 
-  async save(event: Event): Promise<Result<void, EventDetailError>> {
+  async save(event: Event): Promise<Result<void, string>> {
     try {
       await prisma.event.upsert({
         where: { id: event.id },
@@ -60,11 +58,11 @@ export class PrismaEventRepository implements IEventRepository {
       })
       return Ok(undefined)
     } catch {
-      return Err(EventNotFound("Failed to save event."))
+      return Err("Failed to save event.")
     }
   }
 
-  async listPublishedUpcoming(now: Date): Promise<Result<Event[], EventDetailError>> {
+  async listPublishedUpcoming(now: Date): Promise<Result<Event[], string>> {
     try {
       const events = await prisma.event.findMany({
         where: {
@@ -74,11 +72,11 @@ export class PrismaEventRepository implements IEventRepository {
       })
       return Ok(events.map(this.toEvent))
     } catch {
-      return Err(EventNotFound("Failed to fetch events."))
+      return Err("Failed to fetch events.")
     }
   }
 
-  async searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], EventDetailError>> {
+  async searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], string>> {
     try {
       const events = await prisma.event.findMany({
         where: {
@@ -93,20 +91,20 @@ export class PrismaEventRepository implements IEventRepository {
       })
       return Ok(events.map(this.toEvent))
     } catch {
-      return Err(EventNotFound("Failed to search events."))
+      return Err("Failed to search events.")
     }
   }
 
-  async findByOrganizerId(organizerId: string): Promise<Result<Event[], EventDetailError>> {
+  async findByOrganizerId(organizerId: string): Promise<Result<Event[], string>> {
     try {
       const events = await prisma.event.findMany({ where: { organizerId } })
       return Ok(events.map(this.toEvent))
     } catch {
-      return Err(EventNotFound("Failed to fetch events."))
+      return Err("Failed to fetch events.")
     }
   }
 
-  async update(event: Event): Promise<Result<Event, EventDetailError>> {
+  async update(event: Event): Promise<Result<Event, string>> {
     try {
       const updated = await prisma.event.update({
         where: { id: event.id },
@@ -126,11 +124,11 @@ export class PrismaEventRepository implements IEventRepository {
       })
       return Ok(this.toEvent(updated))
     } catch {
-      return Err(EventNotFound("Failed to update event."))
+      return Err("Failed to update event.")
     }
   }
 
-  async create(data: Omit<Event, "id" | "attendeeCount">): Promise<Result<Event, EventDetailError>> {
+  async create(data: Omit<Event, "id" | "attendeeCount">): Promise<Result<Event, string>> {
     try {
       const event = await prisma.event.create({
         data: {
@@ -148,7 +146,7 @@ export class PrismaEventRepository implements IEventRepository {
       })
       return Ok(this.toEvent(event))
     } catch {
-      return Err(EventNotFound("Failed to create event."))
+      return Err("Failed to create event.")
     }
   }
 
