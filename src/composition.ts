@@ -21,8 +21,7 @@ import { CreateAttendeeService } from "./attendee/AttendeeService";
 import { CreateAttendeeController } from "./attendee/AttendeeController";
 import { CreateOrganizerService } from "./organizerdashboard/OrganizerService";
 import { CreateOrganizerController } from "./organizerdashboard/OrganizerDashboard";
-import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { prisma } from "./lib/prismaClient";
 
 export function createComposedApp(mode: "prisma" | "memory", logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
@@ -40,7 +39,7 @@ export function createComposedApp(mode: "prisma" | "memory", logger?: ILoggingSe
   const rsvpController = CreateRSVPController(rsvpService, resolvedLogger);
 
   // Event wiring
-  const eventRepository = CreatePrismaEventRepository();
+  const eventRepository = CreatePrismaEventRepository(prisma);
   const eventService = CreateEventService(eventRepository);
   const eventController = CreateEventController(eventService, resolvedLogger, rsvpRepository);
   const eventListController = CreateEventListController(eventService, resolvedLogger);
@@ -52,10 +51,6 @@ export function createComposedApp(mode: "prisma" | "memory", logger?: ILoggingSe
   // Attendee wiring
   const attendeeService = CreateAttendeeService(eventRepository, rsvpRepository);
   const attendeeController = CreateAttendeeController(attendeeService, resolvedLogger, authUsers);
-
-  // Dashboard wiring
-  const dashboardService = CreateDashboardService(rsvpRepository, eventRepository);
-  const dashboardController = CreateDashboardController(dashboardService, resolvedLogger);
 
   // Organizer wiring
   const organizerService = CreateOrganizerService(eventRepository, rsvpRepository);
