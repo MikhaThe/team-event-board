@@ -15,7 +15,7 @@ import { CreateDashboardController } from "./dashboard/DashboardController";
 import { CreateDashboardService } from "./dashboard/DashboardService";
 import { CreateRSVPController } from "./rsvp/RSVPController";
 import { CreateRSVPService } from "./rsvp/RSVPService";
-import { CreateRSVPRepository } from "./rsvp/RSVPRepository";
+import { CreatePrismaRSVPRepository } from "./rsvp/PrismaRSVPRepository";
 import { CreatePrismaEventRepository } from "./event/PrismaEventRepository";
 import { CreateAttendeeService } from "./attendee/AttendeeService";
 import { CreateAttendeeController } from "./attendee/AttendeeController";
@@ -34,25 +34,20 @@ export function createComposedApp(mode: "prisma" | "memory", logger?: ILoggingSe
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
-
-  // RSVP wiring
-  const rsvpRepository = CreateRSVPRepository();
+   // RSVP wiring
+  const rsvpRepository = CreatePrismaRSVPRepository();
   const rsvpService = CreateRSVPService(rsvpRepository);
   const rsvpController = CreateRSVPController(rsvpService, resolvedLogger);
 
   // Event wiring
-  const eventRepository = 
-    mode === "prisma" 
-      ? CreatePrismaEventRepository(
-          new PrismaClient({
-            adapter: new PrismaBetterSqlite3({
-              url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
-            }),
-          }),
-      ) : CreateInMemoryEventRepository();
+  const eventRepository = CreatePrismaEventRepository();
   const eventService = CreateEventService(eventRepository);
   const eventController = CreateEventController(eventService, resolvedLogger, rsvpRepository);
   const eventListController = CreateEventListController(eventService, resolvedLogger);
+
+  // Dashboard wiring
+  const dashboardService = CreateDashboardService(rsvpRepository, eventRepository);
+  const dashboardController = CreateDashboardController(dashboardService, resolvedLogger);
 
   // Attendee wiring
   const attendeeService = CreateAttendeeService(eventRepository, rsvpRepository);

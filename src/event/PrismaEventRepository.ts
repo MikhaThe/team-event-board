@@ -2,21 +2,19 @@ import type { Event } from "./Event"
 import type { IEventRepository } from "./EventRepository"
 import { Ok, Err } from "../lib/result"
 import type { Result } from "../lib/result"
-import { EventNotFound } from "../lib/error"
+import { EventNotFound, InvalidInput, InvalidTransition } from "../lib/error"
 import type { EventDetailError } from "../lib/error"
 import { PrismaClient } from "@prisma/client"
 
 
 export class PrismaEventRepository implements IEventRepository {
-  constructor(private readonly prisma: PrismaClient) {}
-
   async findById(id: string): Promise<Result<Event | null, EventDetailError>> {
     try {
       const event = await this.prisma.event.findUnique({ where: { id } })
       if (!event) return Ok(null)
       return Ok(this.toEvent(event))
     } catch {
-      return Err(EventNotFound(`Failed to fetch event with id ${id}.`))
+      return Err(EventNotFound("Failed to find event."))
     }
   }
 
@@ -63,7 +61,7 @@ export class PrismaEventRepository implements IEventRepository {
       })
       return Ok(undefined)
     } catch {
-      return Err(EventNotFound(`Failed to save event with id ${event.id}.`))
+      return Err(InvalidInput("Failed to save event."))
     }
   }
 
@@ -77,7 +75,7 @@ export class PrismaEventRepository implements IEventRepository {
       })
       return Ok(events.map(this.toEvent))
     } catch {
-      return Err(EventNotFound("Failed to fetch events."))
+      return Err(InvalidTransition("Failed to fetch events."))
     }
   }
 
@@ -105,7 +103,7 @@ export class PrismaEventRepository implements IEventRepository {
       const events = await this.prisma.event.findMany({ where: { organizerId } })
       return Ok(events.map(this.toEvent))
     } catch {
-      return Err(EventNotFound(`Failed to fetch events for organizer with id ${organizerId}.`))
+      return Err(EventNotFound("Failed to fetch events."))
     }
   }
 
@@ -129,7 +127,7 @@ export class PrismaEventRepository implements IEventRepository {
       })
       return Ok(this.toEvent(updated))
     } catch {
-      return Err(EventNotFound(`Failed to update event with id ${event.id}.`))
+      return Err(InvalidTransition("Failed to update event."))
     }
   }
 
@@ -151,7 +149,7 @@ export class PrismaEventRepository implements IEventRepository {
       })
       return Ok(this.toEvent(event))
     } catch {
-      return Err(EventNotFound("Failed to create event."))
+      return Err(InvalidInput("Failed to create event."))
     }
   }
 
