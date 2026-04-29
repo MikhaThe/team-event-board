@@ -4,22 +4,24 @@ import { Ok, Err } from "../lib/result"
 import type { Result } from "../lib/result"
 import { EventNotFound } from "../lib/error"
 import type { EventDetailError } from "../lib/error"
-import { prisma } from "../lib/prismaClient"
+
 
 export class PrismaEventRepository implements IEventRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
   async findById(id: string): Promise<Result<Event | null, EventDetailError>> {
     try {
-      const event = await prisma.event.findUnique({ where: { id } })
+      const event = await this.prisma.event.findUnique({ where: { id } })
       if (!event) return Ok(null)
       return Ok(this.toEvent(event))
     } catch {
-      return Err(EventNotFound("Failed to find event."))
+      return Err(EventNotFound(`Failed to fetch event with id ${id}.`))
     }
   }
 
   async findAll(): Promise<Result<Event[], EventDetailError>> {
     try {
-      const events = await prisma.event.findMany()
+      const events = await this.prisma.event.findMany()
       return Ok(events.map(this.toEvent))
     } catch {
       return Err(EventNotFound("Failed to fetch events."))
@@ -28,7 +30,7 @@ export class PrismaEventRepository implements IEventRepository {
 
   async save(event: Event): Promise<Result<void, EventDetailError>> {
     try {
-      await prisma.event.upsert({
+      await this.prisma.event.upsert({
         where: { id: event.id },
         update: {
           title: event.title,
@@ -60,13 +62,13 @@ export class PrismaEventRepository implements IEventRepository {
       })
       return Ok(undefined)
     } catch {
-      return Err(EventNotFound("Failed to save event."))
+      return Err(EventNotFound(`Failed to save event with id ${event.id}.`))
     }
   }
 
   async listPublishedUpcoming(now: Date): Promise<Result<Event[], EventDetailError>> {
     try {
-      const events = await prisma.event.findMany({
+      const events = await this.prisma.event.findMany({
         where: {
           status: "published",
           startDatetime: { gt: now.toISOString() },
@@ -80,7 +82,7 @@ export class PrismaEventRepository implements IEventRepository {
 
   async searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], EventDetailError>> {
     try {
-      const events = await prisma.event.findMany({
+      const events = await this.prisma.event.findMany({
         where: {
           status: "published",
           startDatetime: { gt: now.toISOString() },
@@ -99,16 +101,16 @@ export class PrismaEventRepository implements IEventRepository {
 
   async findByOrganizerId(organizerId: string): Promise<Result<Event[], EventDetailError>> {
     try {
-      const events = await prisma.event.findMany({ where: { organizerId } })
+      const events = await this.prisma.event.findMany({ where: { organizerId } })
       return Ok(events.map(this.toEvent))
     } catch {
-      return Err(EventNotFound("Failed to fetch events."))
+      return Err(EventNotFound(`Failed to fetch events for organizer with id ${organizerId}.`))
     }
   }
 
   async update(event: Event): Promise<Result<Event, EventDetailError>> {
     try {
-      const updated = await prisma.event.update({
+      const updated = await this.prisma.event.update({
         where: { id: event.id },
         data: {
           title: event.title,
@@ -126,13 +128,13 @@ export class PrismaEventRepository implements IEventRepository {
       })
       return Ok(this.toEvent(updated))
     } catch {
-      return Err(EventNotFound("Failed to update event."))
+      return Err(EventNotFound(`Failed to update event with id ${event.id}.`))
     }
   }
 
   async create(data: Omit<Event, "id" | "attendeeCount">): Promise<Result<Event, EventDetailError>> {
     try {
-      const event = await prisma.event.create({
+      const event = await this.prisma.event.create({
         data: {
           title: data.title,
           description: data.description,
@@ -170,6 +172,6 @@ export class PrismaEventRepository implements IEventRepository {
   }
 }
 
-export function CreatePrismaEventRepository(): IEventRepository {
-  return new PrismaEventRepository()
+export function CreatePrismaEventRepository(prisma: PrismaClient): IEventRepository {
+  return new PrismaEventRepository(prisma);
 }
