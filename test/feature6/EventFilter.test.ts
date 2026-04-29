@@ -1,7 +1,7 @@
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
 
-const app = createComposedApp().getExpressApp();
+const app = createComposedApp('memory').getExpressApp();
 
 async function loginAs(agent: request.Agent, email: string, password: string) {
   const res = await agent
