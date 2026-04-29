@@ -7,7 +7,7 @@ datasource db {
 }
 
 model Event {
-  id            String   @id @default(uuid())
+  id            String   @id @default(cuid())
   title         String
   description   String
   location      String
@@ -19,6 +19,16 @@ model Event {
   endDatetime   String
   attendeeCount Int      @default(0)
   capacity      Int?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  rsvps         RSVP[]
+}
+
+model RSVP {
+  id        String   @id @default(cuid())
+  userId    String
+  eventId   String
+  status    String
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId])
 }

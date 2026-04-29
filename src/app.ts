@@ -368,7 +368,7 @@ class ExpressApp implements IApp {
     this.app.get(
       "/organizer/dashboard",
       asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
+        if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers and admins can access this page.")) return;
         if (!this.organizerController) { res.status(501).send("Not implemented."); return; }
         const store = sessionStore(req);
         const session = recordPageView(store);

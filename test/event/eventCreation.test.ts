@@ -30,14 +30,14 @@ function buildApp() {
   const eventRepository = InMemoryEventRepository();
   const rsvpRepository = CreateRSVPRepository();
   const eventService = CreateEventService(eventRepository);
-  const eventController = CreateEventController(eventService, logger);
+  const eventController = CreateEventController(eventService, logger, rsvpRepository);
   const eventListController = CreateEventListController(eventService, logger);
   const rsvpService = CreateRSVPService(rsvpRepository);
   const rsvpController = CreateRSVPController(rsvpService, logger);
   const dashboardService = CreateDashboardService(rsvpRepository, eventRepository);
   const dashboardController = CreateDashboardController(dashboardService, logger);
   const attendeeService = CreateAttendeeService(eventRepository, rsvpRepository);
-  const attendeeController = CreateAttendeeController(attendeeService, logger);
+  const attendeeController = CreateAttendeeController(attendeeService, logger, authUsers);
 
   return CreateApp(
     eventController,
