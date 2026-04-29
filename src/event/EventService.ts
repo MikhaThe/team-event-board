@@ -1,7 +1,6 @@
 import { Err, Ok, type Result } from "../lib/result"
 import type { Event } from "./Event"
 import type { IEventRepository } from "./EventRepository"
-import { InMemoryEventRepository } from "./EventRepository"
 import { type EventDetailError, EventNotFound, Forbidden, InvalidTransition, InvalidInput } from "../lib/error"
 
 export type EditEventInput = {
@@ -53,7 +52,7 @@ export interface IEventService {
 
 export class EventService implements IEventService {
   constructor(
-    private readonly repository: IEventRepository = InMemoryEventRepository(),
+    private readonly repository: IEventRepository,
   ) {}
 
   async getEventDetail(eventId: string, viewerId?: string, viewerRole?: string): Promise<Result<Event, EventDetailError>> {
@@ -251,7 +250,7 @@ export class EventService implements IEventService {
 }
 
 export function CreateEventService(
-  eventRepository: IEventRepository = InMemoryEventRepository(),
+  eventRepository: IEventRepository,
 ): IEventService {
   return new EventService(eventRepository)
 }
