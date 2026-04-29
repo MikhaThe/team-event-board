@@ -4,6 +4,7 @@ import { Ok, Err } from "../lib/result"
 import type { Result } from "../lib/result"
 import { EventNotFound } from "../lib/error"
 import type { EventDetailError } from "../lib/error"
+import { PrismaClient } from "@prisma/client"
 
 
 export class PrismaEventRepository implements IEventRepository {
