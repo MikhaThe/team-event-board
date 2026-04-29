@@ -39,7 +39,6 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const rsvpRepository = isTest ? CreateRSVPRepository() : CreatePrismaRSVPRepository();
 
   const eventService = CreateEventService(eventRepository);
-  const eventController = CreateEventController(eventService, resolvedLogger, rsvpRepository);
   const eventListController = CreateEventListController(eventService, resolvedLogger);
 
   // Attendee wiring
@@ -49,6 +48,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   // RSVP wiring
   const rsvpService = CreateRSVPService(rsvpRepository);
   const rsvpController = CreateRSVPController(rsvpService, resolvedLogger);
+  const eventController = CreateEventController(eventService, resolvedLogger, rsvpRepository);
 
   // Dashboard wiring
   const dashboardService = CreateDashboardService(rsvpRepository, eventRepository);

@@ -5,14 +5,14 @@ import { type EventDetailError, EventNotFound } from "../lib/error"
 import { Ok, Err } from "../lib/result"
 
 export interface IEventRepository {
-  findById(id: string): Promise<Result<Event | null, EventDetailError>>
-  findAll(): Promise<Result<Event[], EventDetailError>>
-  save(event: Event): Promise<Result<void, EventDetailError>>
-  findByOrganizerId(organizerId: string): Promise<Result<Event[], EventDetailError>>
-  update(event: Event): Promise<Result<Event, EventDetailError>>
-  listPublishedUpcoming(now: Date): Promise<Result<Event[], EventDetailError>>
-  searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], EventDetailError>>
-  create(data: Omit<Event, "id" | "attendeeCount">): Promise<Result<Event, EventDetailError>>
+  findById(id: string): Promise<Result<Event | null, string>>
+  findAll(): Promise<Result<Event[], string>>
+  save(event: Event): Promise<Result<void, string>>
+  findByOrganizerId(organizerId: string): Promise<Result<Event[], string>>
+  update(event: Event): Promise<Result<Event, string>>
+  create(data: Omit<Event, "id" | "attendeeCount">): Promise<Result<Event, string>>
+  listPublishedUpcoming(now: Date): Promise<Result<Event[], string>>
+  searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], string>>
 }
 
 class EventRepository implements IEventRepository {
@@ -65,60 +65,34 @@ class EventRepository implements IEventRepository {
     })
   }
 
-  async findById(id: string): Promise<Result<Event | null, EventDetailError>> {
+  async findById(id: string): Promise<Result<Event | null, string>> {
     const event = this.events.get(id) ?? null
     return Ok(event)
   }
 
-  async findAll(): Promise<Result<Event[], EventDetailError>> {
+  async findAll(): Promise<Result<Event[], string>> {
     return Ok(Array.from(this.events.values()))
   }
 
-  async save(event: Event): Promise<Result<void, EventDetailError>> {
+  async save(event: Event): Promise<Result<void, string>> {
     this.events.set(event.id, event)
     return Ok(undefined)
   }
 
-  async listPublishedUpcoming(now: Date): Promise<Result<Event[], EventDetailError>> {
-    const events = Array.from(this.events.values()).filter((e) => {
-      const start = new Date(e.startDatetime)
-      return e.status === "published" && start > now
-    })
-    return Ok(events)
-  }
-
-  async searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], EventDetailError>> {
-    const events = Array.from(this.events.values()).filter((e) => {
-      const start = new Date(e.startDatetime)
-      if (e.status !== "published" || start <= now) {
-        return false
-      }
-      if (!term) {
-        return true
-      }
-      return (
-        e.title.toLowerCase().includes(term) ||
-        e.description.toLowerCase().includes(term) ||
-        e.location.toLowerCase().includes(term)
-      )
-    })
-    return Ok(events)
-  }
-
-  async findByOrganizerId(organizerId: string): Promise<Result<Event[], EventDetailError>> {
+  async findByOrganizerId(organizerId: string): Promise<Result<Event[], string>> {
     const events = Array.from(this.events.values()).filter(e => e.organizerId === organizerId)
     return Ok(events)
   }
 
-  async update(event: Event): Promise<Result<Event, EventDetailError>> {
+  async update(event: Event): Promise<Result<Event, string>> {
     if (!this.events.has(event.id)) {
-      return Err(EventNotFound("Event not found."))
+      return Err("Event not found.")
     }
     this.events.set(event.id, event)
     return Ok(event)
   }
 
-  async create(data: Omit<Event, "id" | "attendeeCount">): Promise<Result<Event, EventDetailError>> {
+  async create(data: Omit<Event, "id" | "attendeeCount">): Promise<Result<Event, string>> {
     const event: Event = {
       ...data,
       id: randomUUID(),
@@ -126,6 +100,28 @@ class EventRepository implements IEventRepository {
     }
     this.events.set(event.id, event)
     return Ok(event)
+  }
+
+  async listPublishedUpcoming(now: Date): Promise<Result<Event[], string>> {
+    const events = Array.from(this.events.values()).filter((e) => {
+      const start = new Date(e.startDatetime)
+      return e.status === "published" && start > now
+    })
+    return Ok(events)
+  }
+
+  async searchPublishedUpcoming(term: string, now: Date): Promise<Result<Event[], string>> {
+    const events = Array.from(this.events.values()).filter((e) => {
+      const start = new Date(e.startDatetime)
+      if (e.status !== "published" || start <= now) return false
+      if (!term) return true
+      return (
+        e.title.toLowerCase().includes(term) ||
+        e.description.toLowerCase().includes(term) ||
+        e.location.toLowerCase().includes(term)
+      )
+    })
+    return Ok(events)
   }
 }
 
