@@ -18,8 +18,8 @@ CREATE TABLE "Event" (
 
 CREATE TABLE "RSVP" (
     "userId" TEXT NOT NULL,
-    "eventID" TEXT NOT NULL,
+    "eventId" TEXT NOT NULL,
     "status" TEXT CHECK(status IN ('going', 'waitlisted', 'cancelled')),
     "id" TEXT NOT NULL PRIMARY KEY,
-    "createdAT" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

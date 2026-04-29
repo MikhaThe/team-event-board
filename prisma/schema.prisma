@@ -24,9 +24,9 @@ model Event {
 }
 
 enum RSVPStatus {
-  GOING
-  WAITLISTED
-  CANCELLED
+  going
+  waitlisted
+  cancelled
 }
 
 model RSVP {
