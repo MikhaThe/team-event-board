@@ -38,8 +38,8 @@ export function createComposedApp(mode: "prisma" | "memory", logger?: ILoggingSe
   // RSVP wiring
   const rsvpRepository = CreateRSVPRepository();
   const rsvpService = CreateRSVPService(rsvpRepository);
-  const rsvpController = CreateRSVPController(rsvpService, resolvedLogger); 
-  
+  const rsvpController = CreateRSVPController(rsvpService, resolvedLogger);
+
   // Event wiring
   const eventRepository = 
     mode === "prisma" 
@@ -54,13 +54,13 @@ export function createComposedApp(mode: "prisma" | "memory", logger?: ILoggingSe
   const eventController = CreateEventController(eventService, resolvedLogger, rsvpRepository);
   const eventListController = CreateEventListController(eventService, resolvedLogger);
 
+  // Attendee wiring
+  const attendeeService = CreateAttendeeService(eventRepository, rsvpRepository);
+  const attendeeController = CreateAttendeeController(attendeeService, resolvedLogger, authUsers);
+
   // Dashboard wiring
   const dashboardService = CreateDashboardService(rsvpRepository, eventRepository);
   const dashboardController = CreateDashboardController(dashboardService, resolvedLogger);
-
-  // Attendee wiring
-  const attendeeService = CreateAttendeeService(eventRepository, rsvpRepository);
-  const attendeeController = CreateAttendeeController(attendeeService, resolvedLogger);
 
   // Organizer wiring
   const organizerService = CreateOrganizerService(eventRepository, rsvpRepository);

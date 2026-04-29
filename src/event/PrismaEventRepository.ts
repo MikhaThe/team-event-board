@@ -1,4 +1,3 @@
-import { PrismaClient } from "@prisma/client"
 import type { Event } from "./Event"
 import type { IEventRepository } from "./EventRepository"
 import { Ok, Err } from "../lib/result"
