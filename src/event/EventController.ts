@@ -28,7 +28,7 @@ class EventController implements IEventController {
   ) {}
 
   private isHtmx(req: Request): boolean {
-    return req.get("HX-Request") === "true";
+    return req.headers["hx-request"] === "true";
   }
 
   async showEvent(req: Request, res: Response): Promise<void> {
@@ -174,6 +174,7 @@ class EventController implements IEventController {
       selectedCategory: category ?? "",
       selectedDate: date ?? "",
       session: browserSession,
+      searchTerm: "",
     });
   }
 
@@ -196,6 +197,14 @@ class EventController implements IEventController {
       }
 
       res.status(400).render("partials/error", { message: "Unknown error.", layout: false });
+      return;
+    }
+
+    if (this.isHtmx(req)) {
+      res.render("partials/event-list", {
+        events: result.value,
+        layout: false,
+      });
       return;
     }
 
