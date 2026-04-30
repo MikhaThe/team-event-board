@@ -20,13 +20,9 @@ import {
 import { ILoggingService } from "./service/LoggingService";
 import { IEventController } from "./event/EventController";
 import { IRSVPController } from "./rsvp/RSVPController";
-<<<<<<< HEAD
-import { IDashboardController } from "./dashboard/DashboardController";
-=======
 import type { IEventController as IOrganizerController } from "./organizerdashboard/OrganizerDashboard";
 import type { IDashboardController } from "./dashboard/DashboardController";
 import { IAttendeeController } from "./attendee/AttendeeController";
->>>>>>> dev
 
 type AsyncRequestHandler = RequestHandler;
 
