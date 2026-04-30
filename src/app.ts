@@ -19,7 +19,6 @@ import {
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
 import { IEventController } from "./event/EventController";
-import { IEventListController } from "./event/EventListController";
 import { IRSVPController } from "./rsvp/RSVPController";
 import type { IEventController as IOrganizerController } from "./organizerdashboard/OrganizerDashboard";
 import type { IDashboardController } from "./dashboard/DashboardController";
@@ -42,7 +41,6 @@ class ExpressApp implements IApp {
 
   constructor(
     private readonly eventController: IEventController,
-    private readonly eventlistController: IEventListController,
     private readonly authController: IAuthController,
     private readonly organizerController: IOrganizerController | null,
     private readonly logger: ILoggingService,
@@ -265,7 +263,7 @@ class ExpressApp implements IApp {
           return;
         }
 
-        await this.eventlistController.listEvents(req, res);
+        await this.eventController.listEvents(req, res);
       }),
     );
 
@@ -436,7 +434,6 @@ class ExpressApp implements IApp {
 
 export function CreateApp(
   eventController: IEventController,
-  eventlistController: IEventListController,
   authController: IAuthController,
   organizerController: IOrganizerController | null,
   logger: ILoggingService,
@@ -444,5 +441,5 @@ export function CreateApp(
   dashboardController: IDashboardController,
   attendeeController: IAttendeeController
 ): IApp {
-  return new ExpressApp(eventController, eventlistController, authController, organizerController, logger, rsvpController, dashboardController, attendeeController);
+  return new ExpressApp(eventController, authController, organizerController, logger, rsvpController, dashboardController, attendeeController);
 }
