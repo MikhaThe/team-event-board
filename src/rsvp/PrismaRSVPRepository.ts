@@ -1,7 +1,7 @@
 import type { IRSVPRecord, RSVPStatus } from "./RSVP";
 import  { type Result, Ok, Err} from "../lib/result"
 import { RSVPNotFound, UnexpectedRSVPError, type RSVPError } from "../lib/error"
-import { prisma } from "../lib/prismaClient"
+import { PrismaClient } from "@prisma/client";
 import { IRSVPRepository } from "./RSVPRepository";
 
 
