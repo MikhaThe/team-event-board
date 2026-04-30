@@ -11,7 +11,6 @@ import type { ILoggingService } from "./service/LoggingService";
 import { CreateEventController } from "./event/EventController";
 import { CreateEventService } from "./event/EventService";
 import { CreateInMemoryEventRepository } from "./event/EventRepository";
-import { CreateEventListController } from "./event/EventListController";
 import { CreateDashboardController } from "./dashboard/DashboardController";
 import { CreateDashboardService } from "./dashboard/DashboardService";
 import { CreateRSVPController } from "./rsvp/RSVPController";
@@ -44,7 +43,6 @@ export function createComposedApp(mode: "prisma" | "memory" = "prisma", logger?:
   const eventRepository = mode === "prisma" ? CreatePrismaEventRepository(prisma) : CreateInMemoryEventRepository();
   const eventService = CreateEventService(eventRepository);
   const eventController = CreateEventController(eventService, resolvedLogger, rsvpRepository);
-  const eventListController = CreateEventListController(eventService, resolvedLogger);
 
   // Dashboard wiring
   const dashboardService = CreateDashboardService(rsvpRepository, eventRepository);
@@ -58,5 +56,5 @@ export function createComposedApp(mode: "prisma" | "memory" = "prisma", logger?:
   const organizerService = CreateOrganizerService(eventRepository, rsvpRepository);
   const organizerController = CreateOrganizerController(eventService, organizerService, resolvedLogger);
 
-  return CreateApp(eventController, eventListController, authController, organizerController, resolvedLogger, rsvpController, dashboardController, attendeeController);
+  return CreateApp(eventController, authController, organizerController, resolvedLogger, rsvpController, dashboardController, attendeeController);
 }
