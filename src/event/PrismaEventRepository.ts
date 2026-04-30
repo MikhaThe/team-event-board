@@ -8,6 +8,8 @@ import { prisma } from "../lib/prismaClient"
 
 
 export class PrismaEventRepository implements IEventRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
   async findById(id: string): Promise<Result<Event | null, EventDetailError>> {
     try {
       const event = await prisma.event.findUnique({ where: { id } })

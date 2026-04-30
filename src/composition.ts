@@ -1,4 +1,5 @@
 import { CreateAdminUserService } from "./auth/AdminUserService";
+import { prisma } from "./lib/prismaClient";
 import { CreateAuthController } from "./auth/AuthController";
 import { CreateAuthService } from "./auth/AuthService";
 import { CreateInMemoryUserRepository } from "./auth/InMemoryUserRepository";
@@ -16,15 +17,15 @@ import { CreateDashboardService } from "./dashboard/DashboardService";
 import { CreateRSVPController } from "./rsvp/RSVPController";
 import { CreateRSVPService } from "./rsvp/RSVPService";
 import { CreatePrismaRSVPRepository } from "./rsvp/PrismaRSVPRepository";
+import { CreateRSVPRepository } from "./rsvp/RSVPRepository";
 import { CreatePrismaEventRepository } from "./event/PrismaEventRepository";
 import { CreateAttendeeService } from "./attendee/AttendeeService";
 import { CreateAttendeeController } from "./attendee/AttendeeController";
 import { CreateOrganizerService } from "./organizerdashboard/OrganizerService";
 import { CreateOrganizerController } from "./organizerdashboard/OrganizerDashboard";
-import { prisma } from "./lib/prismaClient";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 
-export function createComposedApp(mode: "prisma" | "memory", logger?: ILoggingService): IApp {
+export function createComposedApp(mode: "prisma" | "memory" = "prisma", logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
 
   // Authentication & authorization wiring
@@ -35,12 +36,12 @@ export function createComposedApp(mode: "prisma" | "memory", logger?: ILoggingSe
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
    // RSVP wiring
-  const rsvpRepository = CreatePrismaRSVPRepository();
+  const rsvpRepository = mode === "prisma" ? CreatePrismaRSVPRepository(prisma) : CreateRSVPRepository();
   const rsvpService = CreateRSVPService(rsvpRepository);
   const rsvpController = CreateRSVPController(rsvpService, resolvedLogger);
 
   // Event wiring
-  const eventRepository = CreatePrismaEventRepository();
+  const eventRepository = mode === "prisma" ? CreatePrismaEventRepository(prisma) : CreateInMemoryEventRepository();
   const eventService = CreateEventService(eventRepository);
   const eventController = CreateEventController(eventService, resolvedLogger, rsvpRepository);
   const eventListController = CreateEventListController(eventService, resolvedLogger);
