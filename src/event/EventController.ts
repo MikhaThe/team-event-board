@@ -8,6 +8,7 @@ import {
 import type { Event } from "./Event";
 import type { EventDetailError } from "../lib/error";
 import { ILoggingService } from "../service/LoggingService";
+import { IRSVPRepository } from "../rsvp/RSVPRepository";
 
 export interface IEventController {
   showEvent(req: Request, res: Response): Promise<void>;
@@ -22,11 +23,12 @@ export interface IEventController {
 class EventController implements IEventController {
   constructor(
     private readonly service: IEventService,
-    private readonly logger: ILoggingService
+    private readonly logger: ILoggingService,
+    private readonly rsvpRepo: IRSVPRepository
   ) {}
 
   private isHtmx(req: Request): boolean {
-    return req.get("HX-Request") === "true";
+    return req.headers["hx-request"] === "true";
   }
 
   async showEvent(req: Request, res: Response): Promise<void> {
@@ -58,10 +60,27 @@ class EventController implements IEventController {
 
     const event: Event = result.value;
     const browserSession = touchAppSession(req.session as AppSessionStore);
+    
+    const rsvpResult = user
+      ? await this.rsvpRepo.findByUserAndEvent(user.userId, eventId)
+      : null;
+    
+      const rsvpStatus = rsvpResult?.ok ? rsvpResult.value?.status ?? null : null;
 
+    if(this.isHtmx(req)) {
+      res.status(200).render("eventDetail", {
+        event,
+        session: browserSession,        
+        rsvpStatus,
+        layout: false,
+      });
+      return;
+    }
+    
     res.render("eventDetail", {
       event,
       session: browserSession,
+      rsvpStatus,
     });
   }
 
@@ -135,9 +154,13 @@ class EventController implements IEventController {
 
   async listEvents(req: Request, res: Response): Promise<void> {
     const category =
-      typeof req.query.category === "string" ? req.query.category : undefined;
+      typeof req.query.category === "string" && req.query.category !== ""
+        ? req.query.category
+        : undefined;
     const date =
-      typeof req.query.date === "string" ? req.query.date : undefined;
+      typeof req.query.date === "string" && req.query.date !== ""
+        ? req.query.date
+        : undefined;
 
     const result = await this.service.getFilteredEvents(category, date);
 
@@ -161,6 +184,7 @@ class EventController implements IEventController {
       selectedCategory: category ?? "",
       selectedDate: date ?? "",
       session: browserSession,
+      searchTerm: "",
     });
   }
 
@@ -171,6 +195,7 @@ class EventController implements IEventController {
       : typeof termRaw === "string"
       ? termRaw
       : null;
+
     const result = await this.service.searchEvents(term);
 
     if (!result.ok) {
@@ -185,8 +210,22 @@ class EventController implements IEventController {
       return;
     }
 
+    if (this.isHtmx(req)) {
+      res.render("partials/event-list", {
+        events: result.value,
+        layout: false,
+      });
+      return;
+    }
+
     const browserSession = touchAppSession(req.session as AppSessionStore);
-    res.render("eventList", { events: result.value, session: browserSession });
+    res.render("eventList", { 
+      events: result.value, 
+      selectedCategory: "",
+      selectedDate: "",
+      session: browserSession,
+      searchTerm: term ?? "",
+    });
   }
 
   async showCreateForm(req: Request, res: Response): Promise<void> {
@@ -258,7 +297,8 @@ class EventController implements IEventController {
 
 export function CreateEventController(
   service: IEventService,
-  logger: ILoggingService
+  logger: ILoggingService,
+  rsvpRepo: IRSVPRepository
 ): IEventController {
-  return new EventController(service, logger);
+  return new EventController(service, logger, rsvpRepo);
 }

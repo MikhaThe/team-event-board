@@ -1,13 +1,13 @@
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
 import { CreateOrganizerService } from "../../src/organizerdashboard/OrganizerService";
-import { InMemoryEventRepository } from "../../src/event/EventRepository";
+import { CreateInMemoryEventRepository } from "../../src/event/EventRepository";
 import { CreateRSVPRepository } from "../../src/rsvp/RSVPRepository";
 
 // ─── HTTP helpers ────────────────────────────────────────────────────────────
 
 function makeApp() {
-  return createComposedApp().getExpressApp();
+  return createComposedApp('memory').getExpressApp();
 }
 
 async function loginAs(agent: ReturnType<typeof request.agent>, email: string) {
@@ -18,7 +18,7 @@ async function loginAs(agent: ReturnType<typeof request.agent>, email: string) {
 
 describe("OrganizerService.getOrganizerDashboard", () => {
   it("returns only the organizer's own events", async () => {
-    const eventRepo = InMemoryEventRepository();
+    const eventRepo = CreateInMemoryEventRepository();
     const rsvpRepo = CreateRSVPRepository();
     const service = CreateOrganizerService(eventRepo, rsvpRepo);
 
@@ -40,7 +40,7 @@ describe("OrganizerService.getOrganizerDashboard", () => {
   });
 
   it("returns all events when viewAll is true (admin mode)", async () => {
-    const eventRepo = InMemoryEventRepository();
+    const eventRepo = CreateInMemoryEventRepository();
     const rsvpRepo = CreateRSVPRepository();
     const service = CreateOrganizerService(eventRepo, rsvpRepo);
 
@@ -68,7 +68,7 @@ describe("OrganizerService.getOrganizerDashboard", () => {
   });
 
   it("groups events by status correctly", async () => {
-    const eventRepo = InMemoryEventRepository();
+    const eventRepo = CreateInMemoryEventRepository();
     const rsvpRepo = CreateRSVPRepository();
     const service = CreateOrganizerService(eventRepo, rsvpRepo);
 
@@ -92,7 +92,7 @@ describe("OrganizerService.getOrganizerDashboard", () => {
   });
 
   it("includes accurate attendee counts", async () => {
-    const eventRepo = InMemoryEventRepository();
+    const eventRepo = CreateInMemoryEventRepository();
     const rsvpRepo = CreateRSVPRepository();
     const service = CreateOrganizerService(eventRepo, rsvpRepo);
 
@@ -112,7 +112,7 @@ describe("OrganizerService.getOrganizerDashboard", () => {
   });
 
   it("returns an empty dashboard for an organizer with no events", async () => {
-    const eventRepo = InMemoryEventRepository();
+    const eventRepo = CreateInMemoryEventRepository();
     const rsvpRepo = CreateRSVPRepository();
     const service = CreateOrganizerService(eventRepo, rsvpRepo);
 

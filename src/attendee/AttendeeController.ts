@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import type { IAttendeeService, AttendeeError } from "./AttendeeService";
 import type { ILoggingService } from "../service/LoggingService";
+import type { IUserRepository } from "../auth/UserRepository";
 import { touchAppSession, type AppSessionStore } from "../session/AppSession";
 
 export interface IAttendeeController {
@@ -11,6 +12,7 @@ class AttendeeController implements IAttendeeController {
   constructor(
     private readonly service: IAttendeeService,
     private readonly logger: ILoggingService,
+    private readonly userRepo: IUserRepository,
   ) {}
 
   async getAttendeeList(req: Request, res: Response): Promise<void> {
@@ -28,11 +30,11 @@ class AttendeeController implements IAttendeeController {
 
     const eventId = String(req.params.id);
 
-    // Pass a resolver function so the service never touches the session
-    const getUserDisplayName = (userId: string): string => {
-      // In Sprints 1-2 we resolve against the session user only;
-      // Sprint 3 will replace this with a real DB lookup
-      if (userId === user.userId) return user.displayName;
+    const getUserDisplayName = async (userId: string): Promise<string> => {
+      const result = await this.userRepo.findById(userId);
+      if (result.ok && result.value) {
+        return result.value.displayName;
+      }
       return "Unknown User";
     };
 
@@ -65,6 +67,7 @@ class AttendeeController implements IAttendeeController {
 export function CreateAttendeeController(
   service: IAttendeeService,
   logger: ILoggingService,
+  userRepo: IUserRepository,
 ): IAttendeeController {
-  return new AttendeeController(service, logger);
+  return new AttendeeController(service, logger, userRepo);
 }

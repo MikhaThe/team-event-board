@@ -61,7 +61,7 @@ describe("DashboardController (Supertest)", () => {
     const res = await request(app).get("/dashboard");
 
     expect(res.status).toBe(200);
-    expect(service.getDashboard).toHaveBeenCalledWith("u1");
+    expect(service.getDashboard).toHaveBeenCalledWith("u1", "user");
   });
 
   it("redirects when not authenticated", async () => {
@@ -74,7 +74,17 @@ describe("DashboardController (Supertest)", () => {
   });
 
   it("blocks staff", async () => {
-    const { app } = createApp({ userId: "s1", role: "staff" });
+    const serviceMock = {
+      getDashboard: jest.fn().mockResolvedValue({
+        ok: false,
+        value: {
+          name: "UnexpectedDependencyError",
+          message: "Staff members cannot access the dashboard."
+        }
+      })
+    };
+
+    const {app}= createApp({ userId: "s1", role: "staff" }, serviceMock);
 
     const res = await request(app).get("/dashboard");
 

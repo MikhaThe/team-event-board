@@ -7,7 +7,7 @@ import { UnexpectedDependencyError } from "../auth/errors";
 import type { AuthError } from "../auth/errors";
 
 export interface IDashboardService {
-  getDashboard(userId: string): Promise<Result<IDashboardView, AuthError>>;
+  getDashboard(userId: string, userRole: string): Promise<Result<IDashboardView, AuthError>>;
 }
 
 class DashboardService implements IDashboardService {
@@ -16,8 +16,14 @@ class DashboardService implements IDashboardService {
     private readonly eventRepo: IEventRepository,
   ) {}
 
-  async getDashboard(userId: string): Promise<Result<IDashboardView, AuthError>> {
+  async getDashboard(userId: string, userRole: string): Promise<Result<IDashboardView, AuthError>> {
+    console.log(userId, userRole);
+    if(userRole === "staff") {
+      return Err(UnexpectedDependencyError("Staff members cannot access the dashboard."));
+    }
+
     const rsvpResult = await this.rsvpRepo.findByUser(userId);
+    
     if (rsvpResult.ok === false) {
       return Err(UnexpectedDependencyError(rsvpResult.value.message));
     }
@@ -33,9 +39,10 @@ class DashboardService implements IDashboardService {
     }
 
     const rsvpedIds = new Set(rsvps.map((r: IRSVPRecord) => r.eventId));
+    const rsvpedUserIds = new Set(rsvps.map((r: IRSVPRecord) => r.userId));
     const eventMap = new Map(
       eventResult.value
-        .filter((e) => rsvpedIds.has(e.id))
+        .filter((e) => rsvpedIds.has(e.id) && rsvpedUserIds.has(userId))
         .map((e) => [e.id, e]),
     );
 

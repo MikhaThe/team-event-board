@@ -1,4 +1,5 @@
 import { CreateAdminUserService } from "./auth/AdminUserService";
+import { prisma } from "./lib/prismaClient";
 import { CreateAuthController } from "./auth/AuthController";
 import { CreateAuthService } from "./auth/AuthService";
 import { CreateInMemoryUserRepository } from "./auth/InMemoryUserRepository";
@@ -9,22 +10,20 @@ import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
 import { CreateEventController } from "./event/EventController";
 import { CreateEventService } from "./event/EventService";
-import { InMemoryEventRepository } from "./event/EventRepository";
-import { CreateEventListController } from "./event/EventListController";
+import { CreateInMemoryEventRepository } from "./event/EventRepository";
 import { CreateDashboardController } from "./dashboard/DashboardController";
 import { CreateDashboardService } from "./dashboard/DashboardService";
-import { CreateRSVPController, RSVPController } from "./rsvp/RSVPController";
+import { CreateRSVPController } from "./rsvp/RSVPController";
 import { CreateRSVPService } from "./rsvp/RSVPService";
+import { CreatePrismaRSVPRepository } from "./rsvp/PrismaRSVPRepository";
 import { CreateRSVPRepository } from "./rsvp/RSVPRepository";
-<<<<<<< HEAD
-=======
+import { CreatePrismaEventRepository } from "./event/PrismaEventRepository";
 import { CreateAttendeeService } from "./attendee/AttendeeService";
 import { CreateAttendeeController } from "./attendee/AttendeeController";
 import { CreateOrganizerService } from "./organizerdashboard/OrganizerService";
 import { CreateOrganizerController } from "./organizerdashboard/OrganizerDashboard";
->>>>>>> dev
 
-export function createComposedApp(logger?: ILoggingService): IApp {
+export function createComposedApp(mode: "prisma" | "memory" = "prisma", logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
 
   // Authentication & authorization wiring
@@ -34,22 +33,27 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
-  // Event wiring (Feature 2 / Feature 6)
-  const eventRepository = InMemoryEventRepository();
-  const eventService = CreateEventService(eventRepository);
-  const eventController = CreateEventController(eventService, resolvedLogger);
-  const eventListController = CreateEventListController(eventService, resolvedLogger);
-  const rsvpRepository = CreateRSVPRepository();
+   // RSVP wiring
+  const rsvpRepository = mode === "prisma" ? CreatePrismaRSVPRepository() : CreateRSVPRepository();
   const rsvpService = CreateRSVPService(rsvpRepository);
   const rsvpController = CreateRSVPController(rsvpService, resolvedLogger);
+
+  // Event wiring
+  const eventRepository = mode === "prisma" ? CreatePrismaEventRepository(prisma) : CreateInMemoryEventRepository();
+  const eventService = CreateEventService(eventRepository);
+  const eventController = CreateEventController(eventService, resolvedLogger, rsvpRepository);
+
+  // Dashboard wiring
   const dashboardService = CreateDashboardService(rsvpRepository, eventRepository);
   const dashboardController = CreateDashboardController(dashboardService, resolvedLogger);
 
-  // User dashboard wiring
-  const dashboardService = CreateDashboardService(rsvpRepository, eventRepository);
-  const dashboardController = CreateDashboardController(dashboardService, resolvedLogger);
+  // Attendee wiring
   const attendeeService = CreateAttendeeService(eventRepository, rsvpRepository);
-  const attendeeController = CreateAttendeeController(attendeeService, resolvedLogger);
+  const attendeeController = CreateAttendeeController(attendeeService, resolvedLogger, authUsers);
 
-  return CreateApp(eventController, eventListController, authController, organizerController, resolvedLogger, rsvpController, dashboardController, attendeeController);
+  // Organizer wiring
+  const organizerService = CreateOrganizerService(eventRepository, rsvpRepository);
+  const organizerController = CreateOrganizerController(eventService, organizerService, resolvedLogger);
+
+  return CreateApp(eventController, authController, organizerController, resolvedLogger, rsvpController, dashboardController, attendeeController);
 }
