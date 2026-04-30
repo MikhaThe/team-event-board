@@ -23,7 +23,6 @@ import { CreateAttendeeService } from "./attendee/AttendeeService";
 import { CreateAttendeeController } from "./attendee/AttendeeController";
 import { CreateOrganizerService } from "./organizerdashboard/OrganizerService";
 import { CreateOrganizerController } from "./organizerdashboard/OrganizerDashboard";
-import { prisma } from "./lib/prismaClient";
 
 export function createComposedApp(mode: "prisma" | "memory" = "prisma", logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
@@ -36,7 +35,7 @@ export function createComposedApp(mode: "prisma" | "memory" = "prisma", logger?:
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
    // RSVP wiring
-  const rsvpRepository = mode === "prisma" ? CreatePrismaRSVPRepository() : CreateRSVPRepository();
+  const rsvpRepository = mode === "prisma" ? CreatePrismaRSVPRepository(prisma) : CreateRSVPRepository();
   const rsvpService = CreateRSVPService(rsvpRepository);
   const rsvpController = CreateRSVPController(rsvpService, resolvedLogger);
 

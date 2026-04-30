@@ -2,13 +2,14 @@ import type { IRSVPRecord, RSVPStatus } from "./RSVP";
 import  { type Result, Ok, Err} from "../lib/result"
 import { RSVPNotFound, UnexpectedRSVPError, type RSVPError } from "../lib/error"
 import { IRSVPRepository } from "./RSVPRepository";
-
-import { prisma } from "../lib/prismaClient"
+import { PrismaClient } from "@prisma/client";
 
 export class PrismaRSVPRepository implements IRSVPRepository {
+    constructor(private readonly prisma: PrismaClient) {}
+
     async findByEvent(eventId: string): Promise<Result<IRSVPRecord[], RSVPError>> {
         try {
-            const records = await prisma.rSVP.findMany({ where: { eventId: eventId } })
+            const records = await this.prisma.rSVP.findMany({ where: { eventId: eventId } })
             return Ok(records.map(this.toRSVPRecord))
         } catch {
             return Err(RSVPNotFound("Failed to find event."))
@@ -17,7 +18,7 @@ export class PrismaRSVPRepository implements IRSVPRepository {
 
     async findByUser(userId: string): Promise<Result<IRSVPRecord[], RSVPError>> {
         try {
-          const records = await prisma.rSVP.findMany({ where: { userId: userId } })
+          const records = await this.prisma.rSVP.findMany({ where: { userId: userId } })
           return Ok(records.map(this.toRSVPRecord))
         } catch {
           return Err(RSVPNotFound("Failed to find event."))
@@ -26,7 +27,7 @@ export class PrismaRSVPRepository implements IRSVPRepository {
     
     async findByUserAndEvent(userId: string, eventId: string): Promise<Result<IRSVPRecord | null, RSVPError>> {
         try {
-          const record = await prisma.rSVP.findFirst({ where: { eventId: eventId, userId: userId } })
+          const record = await this.prisma.rSVP.findFirst({ where: { eventId: eventId, userId: userId } })
           return Ok(this.toRSVPRecord(record))
         } catch {
           return Err(RSVPNotFound("Failed to find event."))
@@ -35,7 +36,7 @@ export class PrismaRSVPRepository implements IRSVPRepository {
 
     async countGoingByEvent(eventId: string): Promise<Result<number, RSVPError>> {
         try {
-            const count = await prisma.rSVP.count({ where: { eventId: eventId, status: "going" } })
+            const count = await this.prisma.rSVP.count({ where: { eventId: eventId, status: "going" } })
             return Ok(count)
         } catch {
             return Err(RSVPNotFound("Failed to find RSVPs for event."))
@@ -44,7 +45,7 @@ export class PrismaRSVPRepository implements IRSVPRepository {
 
     async create(userId: string, eventId: string, status: RSVPStatus): Promise<Result<IRSVPRecord, RSVPError>> {
         try {
-          const event = await prisma.rSVP.create({
+          const event = await this.prisma.rSVP.create({
             data: {
                 userId: userId,
                 eventId: eventId,
@@ -61,11 +62,11 @@ export class PrismaRSVPRepository implements IRSVPRepository {
     
     async updateStatus(userId: string, eventId: string, status: RSVPStatus): Promise<Result<IRSVPRecord, RSVPError>> {
         try {
-          const existing = await prisma.rSVP.findFirst({ where: { userId, eventId } })
+          const existing = await this.prisma.rSVP.findFirst({ where: { userId, eventId } })
             if (!existing) {
                 return Err(RSVPNotFound("RSVP not found."))
             }
-            const updated = await prisma.rSVP.update({
+            const updated = await this.prisma.rSVP.update({
                 where: { id: existing.id },
                 data: { status },
             })
@@ -87,6 +88,6 @@ export class PrismaRSVPRepository implements IRSVPRepository {
     }
 }
 
-export function CreatePrismaRSVPRepository(): IRSVPRepository {
-  return new PrismaRSVPRepository()
+export function CreatePrismaRSVPRepository(prisma : PrismaClient): IRSVPRepository {
+  return new PrismaRSVPRepository(prisma)
 }

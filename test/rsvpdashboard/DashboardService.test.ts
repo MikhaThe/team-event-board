@@ -52,7 +52,7 @@ describe("DashboardService", () => {
   it("returns empty dashboard when user has no RSVPs", async () => {
     rsvpRepo.findByUser.mockResolvedValue({ ok: true, value: [] });
 
-    const result = await service.getDashboard("user1");
+    const result = await service.getDashboard("user1", "user");
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -105,7 +105,7 @@ describe("DashboardService", () => {
       ],
     });
 
-    const result = await service.getDashboard("u1");
+    const result = await service.getDashboard("u1", "user");
 
     expect(result.ok).toBe(true);
 
@@ -129,7 +129,7 @@ describe("DashboardService", () => {
       },
     });
 
-    const result = await service.getDashboard("u1");
+    const result = await service.getDashboard("u1", "user");
 
     expect(result.ok).toBe(false);
   });
@@ -145,7 +145,7 @@ describe("DashboardService", () => {
       value: { name: "EventNotFound" as const, message: "Database connection failed" },
     });
 
-    const result = await service.getDashboard("u1");
+    const result = await service.getDashboard("u1", "user");
 
     expect(result.ok).toBe(false);
   });
