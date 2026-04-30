@@ -67,6 +67,16 @@ class EventController implements IEventController {
     
       const rsvpStatus = rsvpResult?.ok ? rsvpResult.value?.status ?? null : null;
 
+    if(this.isHtmx(req)) {
+      res.status(200).render("eventDetail", {
+        event,
+        session: browserSession,        
+        rsvpStatus,
+        layout: false,
+      });
+      return;
+    }
+    
     res.render("eventDetail", {
       event,
       session: browserSession,
