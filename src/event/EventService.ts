@@ -1,15 +1,7 @@
 import { Err, Ok, type Result } from "../lib/result"
 import type { Event } from "./Event"
 import type { IEventRepository } from "./EventRepository"
-import { InMemoryEventRepository } from "./EventRepository"
-<<<<<<< HEAD
-
-export type EventDetailError =
-  | { name: "EventNotFound"; message: string }
-  | { name: "Forbidden"; message: string }
-=======
 import { type EventDetailError, EventNotFound, Forbidden, InvalidTransition, InvalidInput } from "../lib/error"
->>>>>>> dev
 
 export type EditEventInput = {
   title?: string
@@ -48,12 +40,6 @@ export interface IEventService {
     eventId: string,
     updates: EditEventInput,
     viewerId?: string,
-<<<<<<< HEAD
-    viewerRole?: string
-  ): Promise<Result<void, EventDetailError>>;
-  saveEvent(event: Event): Promise<Result<void, EventDetailError>>;
-  searchEvents(input: string | null,): Promise<Result<Event[], EventDetailError>>;
-=======
     viewerRole?: string,
   ): Promise<Result<Event, EventDetailError>>
 
@@ -62,12 +48,11 @@ export interface IEventService {
   cancelEvent(eventId: string, organizerId: string, isAdmin?: boolean): Promise<Result<Event, EventDetailError>>
   saveEvent(event: Event): Promise<Result<void, EventDetailError>>
   createEvent(input: CreateEventInput): Promise<Result<Event, EventDetailError>>
->>>>>>> dev
 }
 
 export class EventService implements IEventService {
   constructor(
-    private readonly repository: IEventRepository = InMemoryEventRepository(),
+    private readonly repository: IEventRepository,
   ) {}
 
   async getEventDetail(eventId: string, viewerId?: string, viewerRole?: string): Promise<Result<Event, EventDetailError>> {
@@ -186,8 +171,6 @@ export class EventService implements IEventService {
     }
     return Ok(result.value)
   }
-<<<<<<< HEAD
-=======
 
   async createEvent(input: CreateEventInput): Promise<Result<Event, EventDetailError>> {
     const { title, description, location, category,
@@ -264,11 +247,10 @@ export class EventService implements IEventService {
     }
     return Ok(updateResult.value)
   }
->>>>>>> dev
 }
 
 export function CreateEventService(
-  eventRepository: IEventRepository = InMemoryEventRepository(),
+  eventRepository: IEventRepository,
 ): IEventService {
-  return new EventService(eventRepository)
+  return new EventService(eventRepository);
 }

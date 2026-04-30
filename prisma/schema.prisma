@@ -6,14 +6,34 @@ datasource db {
   provider = "sqlite"
 }
 
-// TODO: Define your project's data models here.
-// Example:
-//
-// model Item {
-//   id        Int      @id @default(autoincrement())
-//   title     String
-//   body      String
-//   status    String   @default("active")
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-// }
+model Event {
+  id            String   @id @default(uuid())
+  title         String
+  description   String
+  location      String
+  category      String
+  status        String   @default("draft")
+  organizerId   String
+  organizerName String
+  startDatetime String
+  endDatetime   String
+  attendeeCount Int      @default(0)
+  capacity      Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum RSVPStatus {
+  going
+  waitlisted
+  cancelled
+}
+
+model RSVP {
+  userId    String      
+  eventId   String      
+  status    RSVPStatus?  
+  id        String      @id
+  createdAt DateTime    @default(now())
+}
+
