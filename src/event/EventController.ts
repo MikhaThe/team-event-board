@@ -144,9 +144,13 @@ class EventController implements IEventController {
 
   async listEvents(req: Request, res: Response): Promise<void> {
     const category =
-      typeof req.query.category === "string" ? req.query.category : undefined;
+      typeof req.query.category === "string" && req.query.category !== ""
+        ? req.query.category
+        : undefined;
     const date =
-      typeof req.query.date === "string" ? req.query.date : undefined;
+      typeof req.query.date === "string" && req.query.date !== ""
+        ? req.query.date
+        : undefined;
 
     const result = await this.service.getFilteredEvents(category, date);
 

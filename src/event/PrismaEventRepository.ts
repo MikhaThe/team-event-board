@@ -9,6 +9,7 @@ import { PrismaClient } from "@prisma/client"
 
 export class PrismaEventRepository implements IEventRepository {
   constructor(private readonly prisma: PrismaClient) {}
+
   async findById(id: string): Promise<Result<Event | null, EventDetailError>> {
     try {
       const event = await this.prisma.event.findUnique({ where: { id } })

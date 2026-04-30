@@ -23,6 +23,7 @@ import { CreateAttendeeService } from "./attendee/AttendeeService";
 import { CreateAttendeeController } from "./attendee/AttendeeController";
 import { CreateOrganizerService } from "./organizerdashboard/OrganizerService";
 import { CreateOrganizerController } from "./organizerdashboard/OrganizerDashboard";
+import { prisma } from "./lib/prismaClient";
 
 export function createComposedApp(mode: "prisma" | "memory" = "prisma", logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
