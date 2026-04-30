@@ -37,6 +37,7 @@ export class EventListController implements IEventListController {
       selectedCategory: category ?? "",
       selectedDate: date ?? "",
       session: browserSession,
+      searchTerm: ""
     });
   }
 }

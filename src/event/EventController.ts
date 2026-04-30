@@ -180,6 +180,7 @@ class EventController implements IEventController {
       : typeof termRaw === "string"
       ? termRaw
       : null;
+
     const result = await this.service.searchEvents(term);
 
     if (!result.ok) {
@@ -195,7 +196,13 @@ class EventController implements IEventController {
     }
 
     const browserSession = touchAppSession(req.session as AppSessionStore);
-    res.render("eventList", { events: result.value, session: browserSession });
+    res.render("eventList", { 
+      events: result.value, 
+      selectedCategory: "",
+      selectedDate: "",
+      session: browserSession,
+      searchTerm: term ?? "",
+    });
   }
 
   async showCreateForm(req: Request, res: Response): Promise<void> {
