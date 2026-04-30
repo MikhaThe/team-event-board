@@ -34,6 +34,22 @@
   </div>
 </form>
 
+<form id="searchbar">
+  <input
+  type="text"
+  id="search"
+  placeholder="Search.."
+  name="q"
+  value="<%= searchTerm %>"
+  hx-get="/events/search"
+  hx-trigger="input changed delay:300ms"
+  hx-target="#event-list"
+  hx-swap="innerHTML"
+  hx-include="#searchbar"
+  hx-push-url="true"
+  />
+</form>
+
 <hr />
 
 <div id="event-list">

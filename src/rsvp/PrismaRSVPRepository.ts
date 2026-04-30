@@ -1,8 +1,10 @@
 import type { IRSVPRecord, RSVPStatus } from "./RSVP";
 import  { type Result, Ok, Err} from "../lib/result"
 import { RSVPNotFound, UnexpectedRSVPError, type RSVPError } from "../lib/error"
+import { prisma } from "../lib/prismaClient"
 import { IRSVPRepository } from "./RSVPRepository";
-import { PrismaClient } from "@prisma/client";
+
+
 
 export class PrismaRSVPRepository implements IRSVPRepository {
     constructor(private readonly prisma: PrismaClient) {}
