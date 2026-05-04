@@ -45,7 +45,10 @@
             }" class="flex items-center gap-3">
       <button 
         @click= toggle()
-        class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium cursor-pointer hover:bg-blue-700 text-sm"
+        :class="{ 'bg-blue-600 hover:bg-blue-700': status == 'RSVP',
+        'bg-green-600 hover:bg-green-700': status == 'Attending',
+        'bg-red-600 hover:bg-red-700': status == 'Cancelled' }"
+        class="px-4 py-2 rounded-lg text-white font-medium cursor-pointer text-sm"
       >
         <span x-text="status"></span>
       </button>
