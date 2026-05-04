@@ -35,7 +35,7 @@ export class RSVPController implements IRSVPController {
   async toggleRSVPFromForm(
     req: Request,
     res: Response,
-    input: { eventId: string; capacity: number },
+    input: { eventId: string; capacity: number, attendeeCount: number },
     session: IAppBrowserSession,
   ): Promise<void> {
     const user = session.authenticatedUser
@@ -50,6 +50,7 @@ export class RSVPController implements IRSVPController {
       userId: user.userId,
       eventId: input.eventId,
       capacity: input.capacity,
+      attendeeCount: input.attendeeCount
     });
 
     if (result.ok === false) {
@@ -76,6 +77,7 @@ export class RSVPController implements IRSVPController {
       res.status(200).render("partials/rsvpButton", {
         eventId: rsvp.eventId,
         capacity: input.capacity,
+        attendeeCount: input.attendeeCount,
         rsvpStatus: rsvp.status,
         error: null,
         layout: false,

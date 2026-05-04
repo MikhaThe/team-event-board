@@ -40,11 +40,12 @@
 <div x-data="{
     status: '<%= initialStatus %>',
     capacity: <%= capacity %>,
+    attendeeCount: <%= attendeeCount %>,
     toggle() {
       if (this.status === 'Attending' || this.status === 'Waitlisted') {
         this.status = 'Cancelled'
       } else {
-        this.status = this.capacity > 0 ? 'Attending' : 'Waitlisted'
+        this.status = this.attendeeCount < this.capacity ? 'Attending' : 'Waitlisted'
       }
     }
   }">
