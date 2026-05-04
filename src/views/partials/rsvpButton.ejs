@@ -32,3 +32,21 @@
   <input type="hidden" name="capacity" value="<%= capacity %>" />
   <button type="submit"><%= buttonLabel %></button>
 </form>
+
+<div x-data="{ status: 'RSVP', 
+              toggle() { 
+                if (this.status == 'Attending') { 
+                  this.status = 'Cancelled' 
+                }
+                else {
+                  this.status = 'Attending'
+                }
+              } 
+            }" class="flex items-center gap-3">
+      <button 
+        @click= toggle()
+        class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium cursor-pointer hover:bg-blue-700 text-sm"
+      >
+        <span x-text="status"></span>
+      </button>
+    </div>
