@@ -1,29 +1,92 @@
-<div id = "event-container">
-    <h1><%= event.title %></h1>
+<div id="event-container" class="max-w-3xl mx-auto">
+  <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+    
+    <div class="p-8 border-b border-slate-100">
+      <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold mb-3
+            <%= event.status === 'published' ? 'bg-green-100 text-green-700' : 
+                event.status === 'draft' ? 'bg-yellow-100 text-yellow-700' : 
+                'bg-red-100 text-red-700' %>">
+            <%= event.status %>
+          </span>
+          <h1 class="text-3xl font-bold text-slate-900"><%= event.title %></h1>
+          <p class="text-slate-500 mt-1">Organized by <span class="font-medium text-slate-700"><%= event.organizerName %></span></p>
+        </div>
+      </div>
+    </div>
 
-    <p><%= event.description %></p>
+    <div class="p-8 space-y-6">
+      <p class="text-slate-700 text-lg leading-relaxed"><%= event.description %></p>
 
-    <p><strong>Location:</strong> <%= event.location %></p>
-    <p><strong>Category:</strong> <%= event.category %></p>
-    <p><strong>Status:</strong> <%= event.status %></p>
-    <p><strong>Organizer:</strong> <%= event.organizerName %></p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="bg-slate-50 rounded-xl p-4">
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Location</p>
+          <p class="text-slate-800 font-medium"><%= event.location %></p>
+        </div>
 
-    <p><strong>Start:</strong> <%= event.startDatetime %></p>
-    <p><strong>End:</strong> <%= event.endDatetime %></p>
+        <div class="bg-slate-50 rounded-xl p-4">
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Category</p>
+          <p class="text-slate-800 font-medium"><%= event.category %></p>
+        </div>
 
-    <p><strong>Attendance:</strong> <%= event.attendeeCount %>/<%= event.capacity ?? "No limit" %></p>
+        <div class="bg-slate-50 rounded-xl p-4"
+          x-data="{ 
+            relativeTime: '',
+            init() {
+              const start = new Date('<%= event.startDatetime %>');
+              const now = new Date();
+              const diff = Math.round((start - now) / (1000 * 60 * 60 * 24));
+              if (diff === 0) this.relativeTime = 'today';
+              else if (diff === 1) this.relativeTime = 'tomorrow';
+              else if (diff === -1) this.relativeTime = 'yesterday';
+              else if (diff > 1) this.relativeTime = 'in ' + diff + ' days';
+              else this.relativeTime = Math.abs(diff) + ' days ago';
+            }
+          }">
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Start</p>
+          <p class="text-slate-800 font-medium"><%= event.startDatetime %></p>
+          <p class="text-blue-600 text-sm mt-1" x-text="relativeTime"></p>
+        </div>
 
-    <button hx-get="/events/<%= event.id %>/edit" hx-target="#event-container" hx-swap="innerHTML">
-    Edit
-    </button>
-    <div id="rsvp-container">
-        <%- include('partials/rsvpButton', {
+        <div class="bg-slate-50 rounded-xl p-4">
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">End</p>
+          <p class="text-slate-800 font-medium"><%= event.endDatetime %></p>
+        </div>
+
+        <div class="bg-slate-50 rounded-xl p-4 sm:col-span-2">
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Attendance</p>
+          <div class="flex items-center gap-3">
+            <p class="text-slate-800 font-medium"><%= event.attendeeCount %> / <%= event.capacity ?? "No limit" %></p>
+            <% if (event.capacity) { %>
+              <div class="flex-1 bg-slate-200 rounded-full h-2">
+                <div class="bg-blue-500 h-2 rounded-full" style="width: <%- Math.min(100, Math.round((event.attendeeCount / event.capacity) * 100)) + '%' %>"></div>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-3 flex-wrap pt-2">
+        <button 
+          hx-get="/events/<%= event.id %>/edit" 
+          hx-target="#event-container" 
+          hx-swap="innerHTML"
+          class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 cursor-pointer">
+          Edit
+        </button>
+
+        <div id="rsvp-container">
+          <%- include('partials/rsvpButton', {
             eventId: event.id,
             capacity: event.capacity ?? 0,
             rsvpStatus: rsvpStatus,
             error: null
-        }) %>
+          }) %>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 
 
