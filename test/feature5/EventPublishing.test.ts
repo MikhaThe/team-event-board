@@ -1,12 +1,12 @@
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
 import { CreateEventService } from "../../src/event/EventService";
-import { InMemoryEventRepository } from "../../src/event/EventRepository";
+import { CreateInMemoryEventRepository } from "../../src/event/EventRepository";
 
 // ─── HTTP helpers ────────────────────────────────────────────────────────────
 
 function makeApp() {
-  return createComposedApp().getExpressApp();
+  return createComposedApp('memory').getExpressApp();
 }
 
 async function loginAs(agent: ReturnType<typeof request.agent>, email: string) {
@@ -17,7 +17,7 @@ async function loginAs(agent: ReturnType<typeof request.agent>, email: string) {
 
 describe("EventService.publishEvent", () => {
   it("publishes a draft event owned by the organizer", async () => {
-    const repo = InMemoryEventRepository();
+    const repo = CreateInMemoryEventRepository();
     const service = CreateEventService(repo);
 
     const result = await service.publishEvent("3", "user-staff");
@@ -30,7 +30,7 @@ describe("EventService.publishEvent", () => {
   });
 
   it("returns EventNotFound for a non-existent event", async () => {
-    const repo = InMemoryEventRepository();
+    const repo = CreateInMemoryEventRepository();
     const service = CreateEventService(repo);
 
     const result = await service.publishEvent("999", "user-staff");
@@ -42,7 +42,7 @@ describe("EventService.publishEvent", () => {
   });
 
   it("returns Forbidden when a different organizer tries to publish", async () => {
-    const repo = InMemoryEventRepository();
+    const repo = CreateInMemoryEventRepository();
     const service = CreateEventService(repo);
 
     const result = await service.publishEvent("3", "user-reader");
@@ -54,7 +54,7 @@ describe("EventService.publishEvent", () => {
   });
 
   it("returns InvalidTransition when publishing an already-published event", async () => {
-    const repo = InMemoryEventRepository();
+    const repo = CreateInMemoryEventRepository();
     const service = CreateEventService(repo);
 
     const result = await service.publishEvent("1", "user-staff");
@@ -66,7 +66,7 @@ describe("EventService.publishEvent", () => {
   });
 
   it("allows an admin to publish any event", async () => {
-    const repo = InMemoryEventRepository();
+    const repo = CreateInMemoryEventRepository();
     const service = CreateEventService(repo);
 
     const result = await service.publishEvent("3", "user-admin", true);
@@ -80,7 +80,7 @@ describe("EventService.publishEvent", () => {
 
 describe("EventService.cancelEvent", () => {
   it("cancels a published event owned by the organizer", async () => {
-    const repo = InMemoryEventRepository();
+    const repo = CreateInMemoryEventRepository();
     const service = CreateEventService(repo);
 
     const result = await service.cancelEvent("1", "user-staff");
@@ -92,7 +92,7 @@ describe("EventService.cancelEvent", () => {
   });
 
   it("returns EventNotFound for a non-existent event", async () => {
-    const repo = InMemoryEventRepository();
+    const repo = CreateInMemoryEventRepository();
     const service = CreateEventService(repo);
 
     const result = await service.cancelEvent("999", "user-staff");
@@ -104,7 +104,7 @@ describe("EventService.cancelEvent", () => {
   });
 
   it("returns Forbidden when a different organizer tries to cancel", async () => {
-    const repo = InMemoryEventRepository();
+    const repo = CreateInMemoryEventRepository();
     const service = CreateEventService(repo);
 
     const result = await service.cancelEvent("1", "user-reader");
@@ -116,7 +116,7 @@ describe("EventService.cancelEvent", () => {
   });
 
   it("returns InvalidTransition when cancelling a draft event", async () => {
-    const repo = InMemoryEventRepository();
+    const repo = CreateInMemoryEventRepository();
     const service = CreateEventService(repo);
 
     const result = await service.cancelEvent("3", "user-staff");
@@ -128,7 +128,7 @@ describe("EventService.cancelEvent", () => {
   });
 
   it("returns InvalidTransition when cancelling an already-cancelled event", async () => {
-    const repo = InMemoryEventRepository();
+    const repo = CreateInMemoryEventRepository();
     const service = CreateEventService(repo);
 
     await service.cancelEvent("1", "user-staff");
@@ -141,7 +141,7 @@ describe("EventService.cancelEvent", () => {
   });
 
   it("allows an admin to cancel any event regardless of organizer", async () => {
-    const repo = InMemoryEventRepository();
+    const repo = CreateInMemoryEventRepository();
     const service = CreateEventService(repo);
 
     const result = await service.cancelEvent("1", "user-admin", true);

@@ -28,8 +28,8 @@ class EventRepository implements IEventRepository {
       status: "published",
       organizerId: "user-staff",
       organizerName: "Sam Staff",
-      startDatetime: "2026-04-20T10:00:00",
-      endDatetime: "2026-04-20T12:00:00",
+      startDatetime: "2026-06-20T10:00:00",
+      endDatetime: "2026-06-20T12:00:00",
       attendeeCount: 10,
       capacity: 20,
     })
@@ -43,8 +43,8 @@ class EventRepository implements IEventRepository {
       status: "published",
       organizerId: "user-admin",
       organizerName: "Avery Admin",
-      startDatetime: "2026-04-22T18:00:00",
-      endDatetime: "2026-04-22T20:00:00",
+      startDatetime: "2026-06-22T18:00:00",
+      endDatetime: "2026-06-22T20:00:00",
       attendeeCount: 30,
       capacity: 50,
     })
@@ -58,10 +58,25 @@ class EventRepository implements IEventRepository {
       status: "draft",
       organizerId: "user-staff",
       organizerName: "Sam Staff",
-      startDatetime: "2026-04-25T09:00:00",
-      endDatetime: "2026-04-25T10:00:00",
+      startDatetime: "2026-06-25T09:00:00",
+      endDatetime: "2026-06-25T10:00:00",
       attendeeCount: 0,
       capacity: 10,
+    })
+
+    this.events.set("4", {
+      id: "4",
+      title: "Hanging Out",
+      description: "Just chilling and playing games.",
+      location: "My House",
+      category: "Recreation",
+      status: "published",
+      organizerId: "user-admin",
+      organizerName: "Avery Admin",
+      startDatetime: "2026-05-27T14:00:00",
+      endDatetime: "2026-05-27T18:00:00",
+      attendeeCount: 5,
+      capacity: 5,
     })
   }
 
@@ -129,6 +144,6 @@ class EventRepository implements IEventRepository {
   }
 }
 
-export function InMemoryEventRepository(): IEventRepository {
+export function CreateInMemoryEventRepository(): IEventRepository {
   return new EventRepository()
 }

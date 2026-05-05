@@ -28,7 +28,7 @@ class EventController implements IEventController {
   ) {}
 
   private isHtmx(req: Request): boolean {
-    return req.get("HX-Request") === "true";
+    return req.headers["hx-request"] === "true";
   }
 
   async showEvent(req: Request, res: Response): Promise<void> {
@@ -67,10 +67,23 @@ class EventController implements IEventController {
     
       const rsvpStatus = rsvpResult?.ok ? rsvpResult.value?.status ?? null : null;
 
+    if(this.isHtmx(req)) {
+      res.status(200).render("eventDetail", {
+        event,
+        session: browserSession,        
+        rsvpStatus,
+        layout: false,
+      });
+      return;
+    }
+    
     res.render("eventDetail", {
       event,
       session: browserSession,
       rsvpStatus,
+      user: user?.role,
+      organizerId: event.organizerId,
+      userId: user?.userId,
     });
   }
 
@@ -144,9 +157,13 @@ class EventController implements IEventController {
 
   async listEvents(req: Request, res: Response): Promise<void> {
     const category =
-      typeof req.query.category === "string" ? req.query.category : undefined;
+      typeof req.query.category === "string" && req.query.category !== ""
+        ? req.query.category
+        : undefined;
     const date =
-      typeof req.query.date === "string" ? req.query.date : undefined;
+      typeof req.query.date === "string" && req.query.date !== ""
+        ? req.query.date
+        : undefined;
 
     const result = await this.service.getFilteredEvents(category, date);
 
@@ -170,6 +187,7 @@ class EventController implements IEventController {
       selectedCategory: category ?? "",
       selectedDate: date ?? "",
       session: browserSession,
+      searchTerm: "",
     });
   }
 
@@ -180,6 +198,7 @@ class EventController implements IEventController {
       : typeof termRaw === "string"
       ? termRaw
       : null;
+
     const result = await this.service.searchEvents(term);
 
     if (!result.ok) {
@@ -194,8 +213,22 @@ class EventController implements IEventController {
       return;
     }
 
+    if (this.isHtmx(req)) {
+      res.render("partials/event-list", {
+        events: result.value,
+        layout: false,
+      });
+      return;
+    }
+
     const browserSession = touchAppSession(req.session as AppSessionStore);
-    res.render("eventList", { events: result.value, session: browserSession });
+    res.render("eventList", { 
+      events: result.value, 
+      selectedCategory: "",
+      selectedDate: "",
+      session: browserSession,
+      searchTerm: term ?? "",
+    });
   }
 
   async showCreateForm(req: Request, res: Response): Promise<void> {

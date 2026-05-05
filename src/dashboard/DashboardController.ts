@@ -5,6 +5,7 @@ import type { IAppBrowserSession } from "../session/AppSession";
 import { get } from "node:http";
 import { getAuthenticatedUser } from "../session/AppSession";
 import session from "express-session";
+import { UnexpectedDependencyError } from "../auth/errors";
 
 export interface IDashboardController {
   getDashboard(
@@ -28,14 +29,12 @@ class DashboardController implements IDashboardController {
       return;
     }
 
-    // Staff members manage events — they don't RSVP to them.
-    if (user.role === "staff") {
-      this.logger.warn(`Staff member ${user.userId} attempted dashboard access`);
+    const result = await this.service.getDashboard(user.userId, user.role);
+
+    if(result.ok === false && result.value.name === "UnexpectedDependencyError" && result.value.message === "Staff members cannot access the dashboard.") {
       res.status(403).redirect("/staff/events");
       return;
     }
-
-    const result = await this.service.getDashboard(user.userId);
 
     if (result.ok === false) {
       this.logger.error(`Dashboard fetch failed for user=${user.userId}: ${result.value.message}`);
@@ -47,7 +46,7 @@ class DashboardController implements IDashboardController {
     // Pass the view model to your template engine of choice.
     // ;
     if(req.headers["hx-request"] === "true") {
-      res.status(200).render("partials/dashboard-sections", { dashboard: result.value, session: req.session, layout: false });
+      res.status(200).render("partials/dashboard-sections", { dashboard: result.value, session: req.session});
       return;
     }
     res.status(200).render("dashboard", { dashboard: result.value, session: req.session });

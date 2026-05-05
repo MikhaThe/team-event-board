@@ -7,22 +7,6 @@ Integration Compromise (-10 pts).
 
 ---
 
-## How errors are typed in this codebase
-
-All errors follow this shape:
-  `{ name: string; message: string }`
-
-They are returned as `Err(value)` inside `Result<T, E>` —
-never thrown as exceptions.
-
-Controllers map error names to HTTP status codes:
-- `"EventNotFound"`  → 404
-- `"Forbidden"`      → 403
-- `"InvalidInput"`   → 400
-- `"InvalidState"`   → 409
-
----
-
 ## EventService.createEvent(input)
 
 **Owner:** Taha Kiani (Feature 1)
@@ -72,7 +56,7 @@ Ok({
 
 **Parameters:** `id: string`
 
-**Returns:** `Promise<Result<Event | null, string>>`
+**Returns:** `Promise<Result<Event | null, EventDetailError>>`
 — the event object or null if not found.
 
 ---
@@ -81,7 +65,7 @@ Ok({
 
 **Owner:** Taha Kiani (Feature 1)
 
-**Returns:** `Promise<Result<Event[], string>>`
+**Returns:** `Promise<Result<Event[], EventDetailError>>`
 — all events currently in memory.
 
 ---
@@ -95,10 +79,8 @@ Ok({
 eventId: string,
 requestingUserId: string,
 requestingUserRole: string,
-getUserDisplayName: (userId: string) => string
+getUserDisplayName: (userId: string) => Promise<string>
 ```
-
-> The `getUserDisplayName` parameter is a function injected by the controller. In Sprints 1–2 it resolves against the session user. In Sprint 3 it queries the Prisma User table.
 
 **Success:**
 ```ts
@@ -141,3 +123,38 @@ where `IRSVPRecord` is:
 
 > ⚠️ `id` and `createdAt` are required by Feature 12 for sorting
 > and display. Do not remove them without notifying Feature 12 owner.
+
+---
+
+## Sprint 3 Changes
+
+### What changed in Sprint 3
+
+**EventRepository (Feature 1)**
+- Production now uses `PrismaEventRepository` (SQLite via Prisma)
+- Tests use `CreateInMemoryEventRepository()` (renamed from 
+  `InMemoryEventRepository`)
+- Interface error type changed from `string` to `EventDetailError`
+  across all 8 methods
+
+**AttendeeService.getAttendeeList (Feature 12)**
+- `getUserDisplayName` parameter type changed from:
+    `(userId: string) => string`
+  to:
+    `(userId: string) => Promise<string>`
+- Controller now resolves display names via 
+  `IUserRepository.findById(userId)` instead of session-only lookup
+- This change is backward compatible — tests pass `authUsers` 
+  directly to `CreateAttendeeController` as the 3rd argument
+
+**RSVPRepository (Feature 4)**
+- Production uses in-memory `CreateRSVPRepository()` for now
+- `PrismaRSVPRepository` was prototyped but removed by team decision
+- `findByEvent` is the correct method name (not `findByEventId`)
+
+### createComposedApp signature (shared infrastructure)
+The function now requires a mode argument:
+  createComposedApp("prisma")  // production
+  createComposedApp("memory")  // tests
+
+All test files must pass "memory" as the first argument.

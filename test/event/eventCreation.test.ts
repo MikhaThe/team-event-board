@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { CreateApp } from '../../src/app';
-import { InMemoryEventRepository } from '../../src/event/EventRepository';
+import { CreateInMemoryEventRepository } from '../../src/event/EventRepository';
 import { CreateEventService } from '../../src/event/EventService';
 import { CreateEventController } from '../../src/event/EventController';
 import { CreateEventListController } from '../../src/event/EventListController';
@@ -27,7 +27,7 @@ function buildApp() {
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, logger);
 
-  const eventRepository = InMemoryEventRepository();
+  const eventRepository = CreateInMemoryEventRepository();
   const rsvpRepository = CreateRSVPRepository();
   const eventService = CreateEventService(eventRepository);
   const eventController = CreateEventController(eventService, logger, rsvpRepository);
