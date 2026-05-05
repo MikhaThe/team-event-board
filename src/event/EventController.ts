@@ -9,6 +9,7 @@ import type { Event } from "./Event";
 import type { EventDetailError } from "../lib/error";
 import { ILoggingService } from "../service/LoggingService";
 import { IRSVPRepository } from "../rsvp/RSVPRepository";
+import type { IAuthenticatedUserSession } from "../session/AppSession";
 
 export interface IEventController {
   showEvent(req: Request, res: Response): Promise<void>;
@@ -81,6 +82,9 @@ class EventController implements IEventController {
       event,
       session: browserSession,
       rsvpStatus,
+      user: user?.role,
+      organizerId: event.organizerId,
+      userId: user?.userId,
     });
   }
 
