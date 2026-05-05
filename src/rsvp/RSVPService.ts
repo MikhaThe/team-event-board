@@ -76,7 +76,8 @@ class RSVPService implements IRSVPService {
         attendeeCount: event.attendeeCount});
     }
 
-    if (existing.status === "going" || existing!.status === "waitlisted") {
+    if (existing.status === "going" || existing.status === "waitlisted") {
+      const oldStatus = existing.status;
       const updateResult = await this.rsvpRepo.updateStatus(
         userId,
         eventId,
@@ -86,7 +87,7 @@ class RSVPService implements IRSVPService {
       if (updateResult.ok === false) {
         return Err(RSVPNotFound(updateResult.value.message));
       }
-      if (existing.status === "going") {
+      if (oldStatus === "going") {
         event.attendeeCount--;
         this.eventRepo.update(event)
       }
