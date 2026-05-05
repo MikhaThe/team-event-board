@@ -19,6 +19,7 @@ export interface IEventController {
     organizerId: string,
     session: IAppBrowserSession,
     isHtmx?: boolean,
+    fromDetail?: boolean,
   ): Promise<void>;
   cancelEventFromForm(
     res: Response,
@@ -26,6 +27,7 @@ export interface IEventController {
     organizerId: string,
     session: IAppBrowserSession,
     isHtmx?: boolean,
+    fromDetail?: boolean,
   ): Promise<void>;
 }
 
@@ -90,22 +92,31 @@ class OrganizerController implements IEventController {
     organizerId: string,
     session: IAppBrowserSession,
     isHtmx = false,
+    fromDetail = false,
   ): Promise<void> {
     const isAdmin = session.authenticatedUser?.role === "admin";
     const result = await this.eventService.publishEvent(eventId, organizerId, isAdmin);
 
     if (!result.ok) {
-      const error = result.value as EventDetailError
+      const error = result.value as EventDetailError;
       const status = this.mapErrorStatus(error.name);
       const log = status >= 500 ? this.logger.error : this.logger.warn;
       log.call(this.logger, `Publish event failed: ${error.message}`);
-      res.status(status);
-      await this.renderDashboard(res, organizerId, session, error.message, isHtmx);
+      if (fromDetail) {
+        res.status(status).render("partials/error", { message: error.message, layout: false });
+      } else {
+        res.status(status);
+        await this.renderDashboard(res, organizerId, session, error.message, isHtmx);
+      }
       return;
     }
 
     this.logger.info(`Published event ${result.value.id} by organizer ${organizerId}`);
-    if (isHtmx) {
+    if (fromDetail) {
+      const event = result.value;
+      const canAct = event.status === "draft" || event.status === "published";
+      res.render("partials/eventStatusBadge", { event, canAct, layout: false });
+    } else if (isHtmx) {
       await this.renderDashboard(res, organizerId, session, null, true);
     } else {
       res.redirect("/organizer/dashboard");
@@ -118,22 +129,31 @@ class OrganizerController implements IEventController {
     organizerId: string,
     session: IAppBrowserSession,
     isHtmx = false,
+    fromDetail = false,
   ): Promise<void> {
     const isAdmin = session.authenticatedUser?.role === "admin";
     const result = await this.eventService.cancelEvent(eventId, organizerId, isAdmin);
 
     if (!result.ok) {
-      const error = result.value as EventDetailError
+      const error = result.value as EventDetailError;
       const status = this.mapErrorStatus(error.name);
       const log = status >= 500 ? this.logger.error : this.logger.warn;
       log.call(this.logger, `Cancel event failed: ${error.message}`);
-      res.status(status);
-      await this.renderDashboard(res, organizerId, session, error.message, isHtmx);
+      if (fromDetail) {
+        res.status(status).render("partials/error", { message: error.message, layout: false });
+      } else {
+        res.status(status);
+        await this.renderDashboard(res, organizerId, session, error.message, isHtmx);
+      }
       return;
     }
 
     this.logger.info(`Cancelled event ${result.value.id} by organizer ${organizerId}`);
-    if (isHtmx) {
+    if (fromDetail) {
+      const event = result.value;
+      const canAct = event.status === "draft" || event.status === "published";
+      res.render("partials/eventStatusBadge", { event, canAct, layout: false });
+    } else if (isHtmx) {
       await this.renderDashboard(res, organizerId, session, null, true);
     } else {
       res.redirect("/organizer/dashboard");
