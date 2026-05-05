@@ -18,17 +18,48 @@
   <p style="color: red;"><%= error %></p>
 <% } %>
 
-<% if (rsvpStatus === "going") { %>
-  <p>You are going to this event.</p>
-<% } else if (rsvpStatus === "waitlisted") { %>
-  <p>You are on the waitlist for this event.</p>
-<% } %>
+<%
+  let initialStatus;
+  if (rsvpStatus === "going") {
+    initialStatus = "Attending";
+  } else if (rsvpStatus === "waitlisted") {
+    initialStatus = "Waitlisted";
+  } else if (rsvpStatus === "cancelled") {
+    initialStatus = "Cancelled";
+  } else {
+    initialStatus = "RSVP";
+  }
+%>
 
-<form
-  hx-post="/events/<%= eventId %>/rsvp"
-  hx-target="#rsvp-container"
-  hx-swap="innerHTML"
->
-  <input type="hidden" name="capacity" value="<%= capacity %>" />
-  <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 cursor-pointer"><%= buttonLabel %></button>
-</form>
+<div x-data="{
+    status: '<%= initialStatus %>',
+    capacity: <%= capacity %>,
+    attendeeCount: <%= attendeeCount %>,
+    toggle() {
+      if (this.status === 'Attending' || this.status === 'Waitlisted') {
+        this.status = 'Cancelled'
+        this.attendeeCount--
+      } else {
+        this.attendeeCount++
+        this.status = this.attendeeCount < this.capacity ? 'Attending' : 'Waitlisted'
+      }
+    }
+  }">
+      
+    <input type="hidden" name="status" :value="status" />
+
+    <button 
+      @click= "toggle()"
+      hx-post="/events/<%= eventId %>/rsvp"
+      hx-target="#rsvp-container"
+      hx-swap="innerHTML"
+      hx-include="closest div"
+      :class="{ 'bg-blue-600 hover:bg-blue-700': status == 'RSVP',
+        'bg-green-600 hover:bg-green-700': status == 'Attending',
+        'bg-yellow-300 hover:bg-yellow-400': status == 'Waitlisted',
+        'bg-red-600 hover:bg-red-700': status == 'Cancelled' }"
+      class="px-4 py-2 rounded-lg text-white font-medium cursor-pointer text-sm"
+    >
+      <span x-text="status"></span>
+    </button>
+  </div>

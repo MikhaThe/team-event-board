@@ -354,10 +354,9 @@ class ExpressApp implements IApp {
         }
 
         const eventId = String(req.params.id);
-        const capacity = Number(req.body.capacity);
         const session = touchAppSession(req.session as AppSessionStore);
 
-        await this.rsvpController.toggleRSVPFromForm(req, res, { eventId, capacity }, session);
+        await this.rsvpController.toggleRSVPFromForm(req, res, eventId, session);
       }),
     );
 
