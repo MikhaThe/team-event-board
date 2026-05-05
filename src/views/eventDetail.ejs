@@ -60,7 +60,7 @@
             <p class="text-slate-800 font-medium"><%= event.attendeeCount %> / <%= event.capacity ?? "No limit" %></p>
             <% if (event.capacity) { %>
               <div class="flex-1 bg-slate-200 rounded-full h-2">
-                <div class="bg-blue-500 h-2 rounded-full" style="width: <%- Math.min(100, Math.round((event.attendeeCount / event.capacity) * 100)) + '%' %>"></div>
+                <div class="bg-blue-500 h-2 rounded-full" style="width: <%= (event.capacity ? Math.min(100, Math.round((event.attendeeCount / event.capacity) * 100)) : 0) + '%' %>"></div>
               </div>
             <% } %>
           </div>
@@ -68,13 +68,15 @@
       </div>
 
       <div class="flex gap-3 flex-wrap pt-2">
-        <button 
-          hx-get="/events/<%= event.id %>/edit" 
-          hx-target="#event-container" 
-          hx-swap="innerHTML"
-          class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 cursor-pointer">
-          Edit
-        </button>
+        <% if (user === "admin" || (user === "staff" && userId === organizerId)) { %>
+          <button 
+            hx-get="/events/<%= event.id %>/edit" 
+            hx-target="#event-container" 
+            hx-swap="innerHTML"
+            class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 cursor-pointer">
+            Edit
+          </button>
+        <% }%>
 
         <div id="rsvp-container">
           <%- include('partials/rsvpButton', {

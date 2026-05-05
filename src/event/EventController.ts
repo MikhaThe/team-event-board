@@ -81,6 +81,9 @@ class EventController implements IEventController {
       event,
       session: browserSession,
       rsvpStatus,
+      user: user?.role,
+      organizerId: event.organizerId,
+      userId: user?.userId,
     });
   }
 
