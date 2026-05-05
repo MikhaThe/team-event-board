@@ -80,6 +80,7 @@
           <%- include('partials/rsvpButton', {
             eventId: event.id,
             capacity: event.capacity ?? 0,
+            attendeeCount: event.attendeeCount,
             rsvpStatus: rsvpStatus,
             error: null
           }) %>

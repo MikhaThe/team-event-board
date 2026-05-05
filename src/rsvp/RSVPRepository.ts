@@ -12,32 +12,30 @@ export interface IRSVPRepository {
     updateStatus(userId: string, eventId: string, status: RSVPStatus): Promise<Result<IRSVPRecord, RSVPError>>;
 }
 
-export const SEED_RSVPS: IRSVPRecord[] = [
-  {
-    id: "rsvp-1",
-    eventId: "event-2",
-    userId: "user-staff",
-    status: "going",
-    createdAt: new Date(),
-  },
-  {
-    id: "rsvp-2",
-    eventId: "event-2",
-    userId: "user-reader",
-    status: "going",
-    createdAt: new Date(),
-  },
-  {
-    id: "rsvp-3",
-    eventId: "event-3",
-    userId: "user-re ader",
-    status: "going",
-    createdAt: new Date(),
-  },
-];
-
 class RSVPRepository implements IRSVPRepository {
-    constructor(private readonly rsvpStore: IRSVPRecord[]) {};
+    constructor(private readonly rsvpStore: IRSVPRecord[]) {
+        /* this.rsvpStore.push({
+            userId: "user-reader",
+            eventId: "1",
+            status: "going",
+            id: "1",
+            createdAt: new Date(),
+        });
+        this.rsvpStore.push({
+            userId: "user-reader",
+            eventId: "2",
+            status: "going",
+            id: "2",
+            createdAt: new Date(),
+        });
+        this.rsvpStore.push({
+            userId: "user-staff",
+            eventId: "3",
+            status: "going",
+            id: "3",
+            createdAt: new Date(),
+        }); */
+    };
 
     async findByEvent(eventId: string): Promise<Result<IRSVPRecord[], RSVPError>> {
         const records = this.rsvpStore.filter(r => r.eventId === eventId)

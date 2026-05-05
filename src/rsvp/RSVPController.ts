@@ -11,7 +11,7 @@ export interface IRSVPController {
   toggleRSVPFromForm(
     req: Request,
     res: Response,
-    input: { eventId: string; capacity: number },
+    eventId: String,
     session: IAppBrowserSession,
   ): Promise<void>;
 }
@@ -35,7 +35,7 @@ export class RSVPController implements IRSVPController {
   async toggleRSVPFromForm(
     req: Request,
     res: Response,
-    input: { eventId: string; capacity: number },
+    eventId: String,
     session: IAppBrowserSession,
   ): Promise<void> {
     const user = session.authenticatedUser
@@ -48,8 +48,7 @@ export class RSVPController implements IRSVPController {
 
     const result = await this.service.toggleRSVP({
       userId: user.userId,
-      eventId: input.eventId,
-      capacity: input.capacity,
+      eventId: eventId,
     });
 
     if (result.ok === false) {
@@ -61,12 +60,12 @@ export class RSVPController implements IRSVPController {
       res.status(status);
 
       // Assuming event page route pattern
-      res.redirect(`/events/${input.eventId}?error=${encodeURIComponent(error.message)}`);
+      res.redirect(`/events/${eventId}?error=${encodeURIComponent(error.message)}`);
       return;
     }
 
 
-    const rsvp = result.value;
+    const { rsvp, capacity, attendeeCount } = result.value;
 
     this.logger.info(
       `RSVP updated: user=${user.userId} event=${rsvp.eventId} status=${rsvp.status}`,
@@ -75,7 +74,8 @@ export class RSVPController implements IRSVPController {
     if (this.isHtmxRequest(req)) {
       res.status(200).render("partials/rsvpButton", {
         eventId: rsvp.eventId,
-        capacity: input.capacity,
+        capacity: capacity ?? 0,
+        attendeeCount: attendeeCount ?? 0,
         rsvpStatus: rsvp.status,
         error: null,
         layout: false,

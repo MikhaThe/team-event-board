@@ -33,15 +33,17 @@ export function createComposedApp(mode: "prisma" | "memory" = "prisma", logger?:
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
-   // RSVP wiring
+  // RSVP and Event repo wiring
+  const eventRepository = mode === "prisma" ? CreatePrismaEventRepository(prisma) : CreateInMemoryEventRepository();
   const rsvpRepository = mode === "prisma" ? CreatePrismaRSVPRepository(prisma) : CreateRSVPRepository();
-  const rsvpService = CreateRSVPService(rsvpRepository);
-  const rsvpController = CreateRSVPController(rsvpService, resolvedLogger);
 
   // Event wiring
-  const eventRepository = mode === "prisma" ? CreatePrismaEventRepository(prisma) : CreateInMemoryEventRepository();
   const eventService = CreateEventService(eventRepository);
   const eventController = CreateEventController(eventService, resolvedLogger, rsvpRepository);
+
+  // RSVP wiring
+  const rsvpService = CreateRSVPService(rsvpRepository, eventRepository);
+  const rsvpController = CreateRSVPController(rsvpService, resolvedLogger);
 
   // Dashboard wiring
   const dashboardService = CreateDashboardService(rsvpRepository, eventRepository);
