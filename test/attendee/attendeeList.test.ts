@@ -3,7 +3,6 @@ import { CreateApp } from '../../src/app';
 import { CreateInMemoryEventRepository } from '../../src/event/EventRepository';
 import { CreateEventService } from '../../src/event/EventService';
 import { CreateEventController } from '../../src/event/EventController';
-import { CreateEventListController } from '../../src/event/EventListController';
 import { CreateAttendeeService } from '../../src/attendee/AttendeeService';
 import { CreateAttendeeController } from '../../src/attendee/AttendeeController';
 import { CreateRSVPRepository } from '../../src/rsvp/RSVPRepository';
@@ -31,8 +30,7 @@ function buildApp() {
   const rsvpRepository = CreateRSVPRepository();
   const eventService = CreateEventService(eventRepository);
   const eventController = CreateEventController(eventService, logger, rsvpRepository);
-  const eventListController = CreateEventListController(eventService, logger);
-  const rsvpService = CreateRSVPService(rsvpRepository);
+  const rsvpService = CreateRSVPService(rsvpRepository, eventRepository);
   const rsvpController = CreateRSVPController(rsvpService, logger);
   const dashboardService = CreateDashboardService(rsvpRepository, eventRepository);
   const dashboardController = CreateDashboardController(dashboardService, logger);
@@ -41,7 +39,6 @@ function buildApp() {
 
   return CreateApp(
     eventController,
-    eventListController,
     authController,
     null,
     logger,
