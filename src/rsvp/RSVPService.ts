@@ -10,8 +10,14 @@ export interface ToggleRSVPInput {
   eventId: String;
 }
 
+export interface ToggleRSVPResult {
+  rsvp: IRSVPRecord;
+  capacity: number;
+  attendeeCount: number;
+}
+
 export interface IRSVPService {
-  toggleRSVP(input: ToggleRSVPInput): Promise<Result<IRSVPRecord, RSVPError>>
+  toggleRSVP(input: ToggleRSVPInput): Promise<Result<ToggleRSVPResult, RSVPError>>
 }
 
 class RSVPService implements IRSVPService {
@@ -22,7 +28,7 @@ class RSVPService implements IRSVPService {
 
   async toggleRSVP(
     input: ToggleRSVPInput,
-  ): Promise<Result<IRSVPRecord, RSVPError>> {
+  ): Promise<Result<ToggleRSVPResult, RSVPError>> {
     const userId = input.userId?.trim();
     const eventId = input.eventId?.trim();
     const eventResult = await this.eventRepo.findById(eventId)
@@ -53,7 +59,7 @@ class RSVPService implements IRSVPService {
 
     const goingCount = Number(countResult.value);
     if (!existing) {
-      const status: RSVPStatus = !capacity || goingCount < capacity ? "going" : "waitlisted";
+      const status: RSVPStatus = !capacity || event.attendeeCount < capacity ? "going" : "waitlisted";
 
       const createResult = await this.rsvpRepo.create(userId, eventId, status);
 
@@ -64,7 +70,10 @@ class RSVPService implements IRSVPService {
         event.attendeeCount++;
         this.eventRepo.update(event)
       }
-      return Ok(createResult.value);
+      return Ok({
+        rsvp: createResult.value, 
+        capacity: capacity, 
+        attendeeCount: event.attendeeCount});
     }
 
     if (existing.status === "going" || existing!.status === "waitlisted") {
@@ -77,13 +86,18 @@ class RSVPService implements IRSVPService {
       if (updateResult.ok === false) {
         return Err(RSVPNotFound(updateResult.value.message));
       }
-      event.attendeeCount--;
-      this.eventRepo.update(event)
-      return Ok(updateResult.value);
+      if (existing.status === "going") {
+        event.attendeeCount--;
+        this.eventRepo.update(event)
+      }
+      return Ok({
+        rsvp: updateResult.value, 
+        capacity: capacity, 
+        attendeeCount: event.attendeeCount});
     }
 
     if (existing.status === "cancelled") {
-      const status: RSVPStatus = !capacity || goingCount < capacity ? "going" : "waitlisted";
+      const status: RSVPStatus = !capacity || event.attendeeCount < capacity ? "going" : "waitlisted";
       const updateResult = await this.rsvpRepo.updateStatus(
         userId,
         eventId,
@@ -93,9 +107,14 @@ class RSVPService implements IRSVPService {
       if (updateResult.ok === false) {
         return Err(RSVPNotFound(updateResult.value.message));
       }
-      event.attendeeCount++;
-      this.eventRepo.update(event)
-      return Ok(updateResult.value);
+      if (status === "going") {
+        event.attendeeCount++;
+        this.eventRepo.update(event)
+      }
+      return Ok({
+        rsvp: updateResult.value, 
+        capacity: capacity, 
+        attendeeCount: event.attendeeCount});
     }
 
     return Err(UnexpectedRSVPError("Invalid RSVP state."));
