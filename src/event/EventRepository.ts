@@ -63,6 +63,21 @@ class EventRepository implements IEventRepository {
       attendeeCount: 0,
       capacity: 10,
     })
+
+    this.events.set("4", {
+      id: "4",
+      title: "Hanging Out",
+      description: "Just chilling and playing games.",
+      location: "My House",
+      category: "Recreation",
+      status: "published",
+      organizerId: "user-admin",
+      organizerName: "Avery Admin",
+      startDatetime: "2026-05-27T14:00:00",
+      endDatetime: "2026-05-27T18:00:00",
+      attendeeCount: 5,
+      capacity: 5,
+    })
   }
 
   async findById(id: string): Promise<Result<Event | null, EventDetailError>> {
