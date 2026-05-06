@@ -3,7 +3,7 @@ import type { IDashboardService } from "./DashboardService";
 import type { ILoggingService } from "../service/LoggingService";
 import type { IAppBrowserSession } from "../session/AppSession";
 import { get } from "node:http";
-import { getAuthenticatedUser } from "../session/AppSession";
+import { getAuthenticatedUser, touchAppSession } from "../session/AppSession";
 import session from "express-session";
 import { UnexpectedDependencyError } from "../auth/errors";
 
@@ -45,11 +45,13 @@ class DashboardController implements IDashboardController {
     this.logger.info(`Dashboard loaded for user=${user.userId}`);
     // Pass the view model to your template engine of choice.
     // ;
+    const browserSession = touchAppSession(req.session)
+
     if(req.headers["hx-request"] === "true") {
-      res.status(200).render("partials/dashboard-sections", { dashboard: result.value, session: req.session});
+      res.status(200).render("partials/dashboard-sections", { dashboard: result.value, session: browserSession});
       return;
     }
-    res.status(200).render("dashboard", { dashboard: result.value, session: req.session });
+    res.status(200).render("dashboard", { dashboard: result.value, session: browserSession });
   }
 }
 
