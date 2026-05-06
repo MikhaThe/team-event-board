@@ -385,7 +385,10 @@ class ExpressApp implements IApp {
         const session = touchAppSession(store);
         const currentUser = getAuthenticatedUser(store);
         const eventId = typeof req.params.id === "string" ? req.params.id : "";
-        await this.organizerController.publishEventFromForm(res, eventId, currentUser!.userId, session);
+        const isHtmx = this.isHtmxRequest(req);
+        const currentUrl = req.get("HX-Current-URL") ?? "";
+        const fromDetail = isHtmx && /\/events\/[^/]+$/.test(currentUrl);
+        await this.organizerController.publishEventFromForm(res, eventId, currentUser!.userId, session, isHtmx, fromDetail);
       }),
     );
 
@@ -398,7 +401,10 @@ class ExpressApp implements IApp {
         const session = touchAppSession(store);
         const currentUser = getAuthenticatedUser(store);
         const eventId = typeof req.params.id === "string" ? req.params.id : "";
-        await this.organizerController.cancelEventFromForm(res, eventId, currentUser!.userId, session);
+        const isHtmx = this.isHtmxRequest(req);
+        const currentUrl = req.get("HX-Current-URL") ?? "";
+        const fromDetail = isHtmx && /\/events\/[^/]+$/.test(currentUrl);
+        await this.organizerController.cancelEventFromForm(res, eventId, currentUser!.userId, session, isHtmx, fromDetail);
       }),
     );
 
