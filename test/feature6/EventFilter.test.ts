@@ -40,7 +40,7 @@ describe("Feature 6 - Category and Date Filter", () => {
       const agent = request.agent(app);
       await loginAs(agent, "staff@app.test", "password123");
 
-      const res = await agent.get("/events?date=2026-04-22");
+      const res = await agent.get("/events?date=2026-06-22");
       expect(res.status).toBe(200);
       expect(res.text).toContain("Music Night");
       expect(res.text).not.toContain("Test Event");
@@ -50,7 +50,7 @@ describe("Feature 6 - Category and Date Filter", () => {
       const agent = request.agent(app);
       await loginAs(agent, "staff@app.test", "password123");
 
-      const res = await agent.get("/events?category=Music&date=2026-04-22");
+      const res = await agent.get("/events?category=Music&date=2026-06-22");
       expect(res.status).toBe(200);
       expect(res.text).toContain("Music Night");
     });
