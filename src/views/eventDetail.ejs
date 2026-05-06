@@ -68,12 +68,13 @@
       </div>
 
       <div class="flex gap-3 flex-wrap pt-2">
-        <% if (user === "admin" || (user === "staff" && userId === organizerId)) { %>
+        <% currentUser = typeof user !== 'undefined' ? user : null %>
+        <% if (currentUser === null || user === "admin" || (user === "staff" && userId === organizerId)) { %>
           <button 
             hx-get="/events/<%= event.id %>/edit" 
             hx-target="#event-container" 
             hx-swap="innerHTML"
-            class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 cursor-pointer">
+            class="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 cursor-pointer">
             Edit
           </button>
         <% }%>
