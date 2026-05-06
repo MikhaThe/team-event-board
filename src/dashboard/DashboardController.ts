@@ -48,7 +48,7 @@ class DashboardController implements IDashboardController {
     const browserSession = touchAppSession(req.session)
 
     if(req.headers["hx-request"] === "true") {
-      res.status(200).render("partials/dashboard-sections", { dashboard: result.value, session: browserSession});
+      res.status(200).render("partials/dashboardContent", { dashboard: result.value, session: browserSession, layout: false});
       return;
     }
     res.status(200).render("dashboard", { dashboard: result.value, session: browserSession });

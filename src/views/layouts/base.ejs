@@ -23,7 +23,7 @@
             <a href="/events"
               class="text-blue-700 font-semibold no-underline hover:underline">All Events</a>
             <% if (session.authenticatedUser.role === "user") { %>
-              <a href = "/dashboard"
+              <a href = "/rsvpdashboard"
               class="text-blue-700 font-semibold no-underline hover:underline">My RSVPs</a>
             <% } else { %>
               <a href = "/organizer/dashboard"

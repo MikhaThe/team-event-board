@@ -18,6 +18,7 @@ export interface ToggleRSVPResult {
 
 export interface IRSVPService {
   toggleRSVP(input: ToggleRSVPInput): Promise<Result<ToggleRSVPResult, RSVPError>>
+  cancelRSVP(input: ToggleRSVPInput): Promise<Result<ToggleRSVPResult, RSVPError>>
 }
 
 class RSVPService implements IRSVPService {
@@ -119,6 +120,54 @@ class RSVPService implements IRSVPService {
     }
 
     return Err(UnexpectedRSVPError("Invalid RSVP state."));
+  }
+
+  async cancelRSVP(
+    input: ToggleRSVPInput,
+  ): Promise<Result<ToggleRSVPResult, RSVPError>> {
+    const userId = input.userId?.trim();
+    const eventId = input.eventId?.trim();
+
+    if (!userId) {
+      return Err(InvalidRSVP("User ID is required."));
+    }
+    if (!eventId) {
+      return Err(InvalidRSVP("Event ID is required."));
+    }
+
+    const eventResult = await this.eventRepo.findById(eventId);
+    if (!eventResult.ok || !eventResult.value) {
+      return Err(RSVPNotFound("Event could not be found"));
+    }
+    const event = eventResult.value as Event;
+
+    const existingResult = await this.rsvpRepo.findByUserAndEvent(userId, eventId);
+    if (!existingResult.ok) {
+      return Err(RSVPNotFound("RSVP could not be found"));
+    }
+
+    const existing = existingResult.value;
+    if (!existing || existing.status === "cancelled") {
+      return Err(InvalidRSVP("No active RSVP to cancel."));
+    }
+
+    const oldStatus = existing.status;
+    const updateResult = await this.rsvpRepo.updateStatus(userId, eventId, "cancelled");
+
+    if (updateResult.ok === false) {
+      return Err(RSVPNotFound(updateResult.value.message));
+    }
+
+    if (oldStatus === "going") {
+      event.attendeeCount--;
+      this.eventRepo.update(event);
+    }
+
+    return Ok({
+      rsvp: updateResult.value,
+      capacity: event.capacity ?? 0,
+      attendeeCount: event.attendeeCount,
+    });
   }
 }
 

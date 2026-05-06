@@ -360,6 +360,20 @@ class ExpressApp implements IApp {
       }),
     );
 
+    this.app.post(
+      "/events/:id/rsvp/cancel",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const eventId = String(req.params.id);
+        const session = touchAppSession(req.session as AppSessionStore);
+
+        await this.rsvpController.cancelRSVP(req, res, eventId, session);
+      }),
+    );
+
     // ── Organizer event dashboard (Feature 8) ────────────────────────
 
     this.app.get(
@@ -411,7 +425,7 @@ class ExpressApp implements IApp {
     // ── RSVP Dashboard route (Feature 7) ─────────────────────────────
 
     this.app.get(
-      "/dashboard",
+      "/rsvpdashboard",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) {
           return;
