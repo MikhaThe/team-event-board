@@ -1,7 +1,3 @@
-<% if (pageError) { %>
-  <%- include("./error", { message: pageError }) %>
-<% } %>
-
 <% const totalEvents = dashboard.draft.length + dashboard.published.length + dashboard.cancelled.length + dashboard.past.length; %>
 
 <% if (totalEvents === 0) { %>
