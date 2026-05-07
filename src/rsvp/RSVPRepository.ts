@@ -39,6 +39,15 @@ class RSVPRepository implements IRSVPRepository {
             id: "",
             createdAt: new Date(),
         });
+        for (let i = 0; i < 5; i++) {
+            this.rsvpStore.push({
+            userId: "user-staff",
+            eventId: (40+i).toString(),
+            status: "going",
+            id: "",
+            createdAt: new Date(),
+        });
+        }
     };
 
     async findByEvent(eventId: string): Promise<Result<IRSVPRecord[], RSVPError>> {
