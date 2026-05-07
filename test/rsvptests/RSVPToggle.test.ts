@@ -3,7 +3,8 @@ import type { IRSVPRepository } from "../../src/rsvp/RSVPRepository";
 import type { IRSVPRecord } from "../../src/rsvp/RSVP";
 import { Ok, Err } from "../../src/lib/result";
 import { RSVPNotFound, InvalidRSVP, UnexpectedRSVPError } from "../../src/lib/error";
-
+import { IEventRepository } from "../../src/event/EventRepository";
+import { type Event } from "../../src/event/Event"
 
 function makeRecord(overrides: Partial<IRSVPRecord> = {}): IRSVPRecord {
   return {
@@ -16,7 +17,25 @@ function makeRecord(overrides: Partial<IRSVPRecord> = {}): IRSVPRecord {
   };
 }
 
-function makeFakeRepo(overrides: Partial<IRSVPRepository> = {}): IRSVPRepository {
+function makeEvent(overrides: Partial<Event> = {}): Event {
+  return {
+    id:"event-1",
+    title:"Event",
+    description: "This is an event",
+    location: "Here",
+    category: "General",
+    status: "published",
+    organizerId: "staff-1",
+    organizerName: "Organizer",
+    startDatetime: "Tomorrow 2 PM",
+    endDatetime: "Tomorrow 5 PM",
+    attendeeCount: 0,
+    capacity: 1,
+    ...overrides
+  }
+}
+
+function makeFakeRSVPRepo(overrides: Partial<IRSVPRepository> = {}): IRSVPRepository {
   return {
     findByEvent: jest.fn().mockResolvedValue(Ok([])),
     findByUser: jest.fn().mockResolvedValue(Ok([])),
@@ -28,13 +47,27 @@ function makeFakeRepo(overrides: Partial<IRSVPRepository> = {}): IRSVPRepository
   };
 }
 
+function makeFakeEventRepo(overrides: Partial<IEventRepository> = {}): IEventRepository {
+  return {
+    findById: jest.fn().mockResolvedValue(Ok([])),
+    findAll: jest.fn().mockResolvedValue(Ok([])),
+    save: jest.fn().mockResolvedValue(Ok(makeEvent())),
+    listPublishedUpcoming: jest.fn().mockResolvedValue(Ok([])),
+    searchPublishedUpcoming: jest.fn().mockResolvedValue(Ok([])),
+    findByOrganizerId: jest.fn().mockResolvedValue(Ok([])),
+    update: jest.fn().mockResolvedValue(Ok(makeEvent())),
+    create: jest.fn().mockResolvedValue(Ok(makeEvent())),
+    ...overrides,
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Input validation
 // ---------------------------------------------------------------------------
 
 describe("RSVPService: input validation", () => {
   it("returns InvalidRSVP when userId is empty", async () => {
-    const svc = CreateRSVPService(makeFakeRepo());
+    const svc = CreateRSVPService(makeFakeRSVPRepo(), makeFakeEventRepo());
     const result = await svc.toggleRSVP({ userId: "", eventId: "event-1", capacity: 10 });
 
     expect(result.ok).toBe(false);
@@ -42,7 +75,7 @@ describe("RSVPService: input validation", () => {
   });
 
   it("returns InvalidRSVP when userId is only whitespace", async () => {
-    const svc = CreateRSVPService(makeFakeRepo());
+    const svc = CreateRSVPService(makeFakeRSVPRepo(), makeFakeEventRepo());
     const result = await svc.toggleRSVP({ userId: "   ", eventId: "event-1", capacity: 10 });
 
     expect(result.ok).toBe(false);
@@ -50,7 +83,7 @@ describe("RSVPService: input validation", () => {
   });
 
   it("returns InvalidRSVP when eventId is empty", async () => {
-    const svc = CreateRSVPService(makeFakeRepo());
+    const svc = CreateRSVPService(makeFakeRSVPRepo(), makeFakeEventRepo());
     const result = await svc.toggleRSVP({ userId: "user-1", eventId: "", capacity: 10 });
 
     expect(result.ok).toBe(false);
@@ -58,7 +91,7 @@ describe("RSVPService: input validation", () => {
   });
 
   it("returns InvalidRSVP when capacity is negative", async () => {
-    const svc = CreateRSVPService(makeFakeRepo());
+    const svc = CreateRSVPService(makeFakeRSVPRepo(), makeFakeEventRepo());
     const result = await svc.toggleRSVP({ userId: "user-1", eventId: "event-1", capacity: -1 });
 
     expect(result.ok).toBe(false);
@@ -68,13 +101,18 @@ describe("RSVPService: input validation", () => {
   it("passes validation when capacity is exactly 0", async () => {
     // capacity === 0 is valid input; it means the event is full immediately
     // so any new RSVP lands on the waitlist (0 < 0 is false).
-    const repo = makeFakeRepo({
+    const created = makeEvent({attendeeCount: 0, capacity: 0})
+    const rsvpRepo = makeFakeRSVPRepo({
       findByUserAndEvent: jest.fn().mockResolvedValue(Ok(null)),
       countGoingByEvent: jest.fn().mockResolvedValue(Ok(0)),
       create: jest.fn().mockResolvedValue(Ok(makeRecord({ status: "waitlisted" }))),
     });
-    const svc = CreateRSVPService(repo);
-    const result = await svc.toggleRSVP({ userId: "user-1", eventId: "event-1", capacity: 0 });
+    const eventRepo = makeFakeEventRepo({
+      findById: jest.fn().mockResolvedValue(Ok(created)),
+      update: jest.fn().mockResolvedValue(Ok(created))
+    })
+    const svc = CreateRSVPService(rsvpRepo, eventRepo);
+    const result = await svc.toggleRSVP({ userId: "user-1", eventId: "event-1"});
 
     // Validation itself must not reject capacity === 0
     expect(result.ok === false && result.value.name).not.toBe("Invalid RSVP");
@@ -88,12 +126,12 @@ describe("RSVPService: input validation", () => {
 describe("RSVPService: new RSVP", () => {
   it("creates a 'going' RSVP when capacity has not been reached", async () => {
     const created = makeRecord({ status: "going" });
-    const repo = makeFakeRepo({
+    const repo = makeFakeRSVPRepo({
       findByUserAndEvent: jest.fn().mockResolvedValue(Ok(null)), // no prior RSVP
       countGoingByEvent: jest.fn().mockResolvedValue(Ok(3)),     // 3 going, capacity 10
       create: jest.fn().mockResolvedValue(Ok(created)),
     });
-    const svc = CreateRSVPService(repo);
+    const svc = CreateRSVPService(repo, makeFakeEventRepo());
     const result = await svc.toggleRSVP({ userId: "user-1", eventId: "event-1", capacity: 10 });
 
     expect(result.ok).toBe(true);
@@ -103,12 +141,12 @@ describe("RSVPService: new RSVP", () => {
 
   it("creates a 'waitlisted' RSVP when the event is at capacity", async () => {
     const created = makeRecord({ status: "waitlisted" });
-    const repo = makeFakeRepo({
+    const repo = makeFakeRSVPRepo({
       findByUserAndEvent: jest.fn().mockResolvedValue(Ok(null)), // no prior RSVP
       countGoingByEvent: jest.fn().mockResolvedValue(Ok(10)),    // 10 going, capacity 10
       create: jest.fn().mockResolvedValue(Ok(created)),
     });
-    const svc = CreateRSVPService(repo);
+    const svc = CreateRSVPService(repo, makeFakeEventRepo());
     const result = await svc.toggleRSVP({ userId: "user-1", eventId: "event-1", capacity: 10 });
 
     expect(result.ok).toBe(true);
@@ -118,12 +156,12 @@ describe("RSVPService: new RSVP", () => {
 
   it("creates a 'waitlisted' RSVP when capacity is 0 (event always full)", async () => {
     const created = makeRecord({ status: "waitlisted" });
-    const repo = makeFakeRepo({
+    const repo = makeFakeRSVPRepo({
       findByUserAndEvent: jest.fn().mockResolvedValue(Ok(null)),
       countGoingByEvent: jest.fn().mockResolvedValue(Ok(0)),
       create: jest.fn().mockResolvedValue(Ok(created)),
     });
-    const svc = CreateRSVPService(repo);
+    const svc = CreateRSVPService(repo, makeFakeEventRepo());
     const result = await svc.toggleRSVP({ userId: "user-1", eventId: "event-1", capacity: 0 });
 
     expect(result.ok).toBe(true);
@@ -132,12 +170,12 @@ describe("RSVPService: new RSVP", () => {
 
   it("creates a 'going' RSVP when there is exactly one slot left", async () => {
     const created = makeRecord({ status: "going" });
-    const repo = makeFakeRepo({
+    const repo = makeFakeRSVPRepo({
       findByUserAndEvent: jest.fn().mockResolvedValue(Ok(null)),
       countGoingByEvent: jest.fn().mockResolvedValue(Ok(9)), // 9 going, capacity 10 → 1 slot left
       create: jest.fn().mockResolvedValue(Ok(created)),
     });
-    const svc = CreateRSVPService(repo);
+    const svc = CreateRSVPService(repo, makeFakeEventRepo());
     const result = await svc.toggleRSVP({ userId: "user-1", eventId: "event-1", capacity: 10 });
 
     expect(result.ok).toBe(true);
@@ -154,12 +192,12 @@ describe("RSVPService: cancelling an existing RSVP", () => {
   it("cancels a 'going' RSVP", async () => {
     const existing = makeRecord({ status: "going" });
     const cancelled = makeRecord({ status: "cancelled" });
-    const repo = makeFakeRepo({
+    const repo = makeFakeRSVPRepo({
       findByUserAndEvent: jest.fn().mockResolvedValue(Ok(existing)),
       countGoingByEvent: jest.fn().mockResolvedValue(Ok(5)),
       updateStatus: jest.fn().mockResolvedValue(Ok(cancelled)),
     });
-    const svc = CreateRSVPService(repo);
+    const svc = CreateRSVPService(repo, makeFakeEventRepo());
     const result = await svc.toggleRSVP({ userId: "user-1", eventId: "event-1", capacity: 10 });
 
     expect(result.ok).toBe(true);
@@ -170,12 +208,12 @@ describe("RSVPService: cancelling an existing RSVP", () => {
   it("cancels a 'waitlisted' RSVP", async () => {
     const existing = makeRecord({ status: "waitlisted" });
     const cancelled = makeRecord({ status: "cancelled" });
-    const repo = makeFakeRepo({
+    const repo = makeFakeRSVPRepo({
       findByUserAndEvent: jest.fn().mockResolvedValue(Ok(existing)),
       countGoingByEvent: jest.fn().mockResolvedValue(Ok(10)),
       updateStatus: jest.fn().mockResolvedValue(Ok(cancelled)),
     });
-    const svc = CreateRSVPService(repo);
+    const svc = CreateRSVPService(repo, makeFakeEventRepo());
     const result = await svc.toggleRSVP({ userId: "user-1", eventId: "event-1", capacity: 10 });
 
     expect(result.ok).toBe(true);
@@ -185,12 +223,12 @@ describe("RSVPService: cancelling an existing RSVP", () => {
 
   it("returns an error if updateStatus fails during cancellation", async () => {
     const existing = makeRecord({ status: "going" });
-    const repo = makeFakeRepo({
+    const repo = makeFakeRSVPRepo({
       findByUserAndEvent: jest.fn().mockResolvedValue(Ok(existing)),
       countGoingByEvent: jest.fn().mockResolvedValue(Ok(5)),
       updateStatus: jest.fn().mockResolvedValue(Err(RSVPNotFound("not found"))),
     });
-    const svc = CreateRSVPService(repo);
+    const svc = CreateRSVPService(repo, makeFakeEventRepo());
     const result = await svc.toggleRSVP({ userId: "user-1", eventId: "event-1", capacity: 10 });
 
     expect(result.ok).toBe(false);
@@ -206,12 +244,12 @@ describe("RSVPService: reactivating a cancelled RSVP", () => {
   it("reactivates to 'going' when capacity has not been reached", async () => {
     const existing = makeRecord({ status: "cancelled" });
     const reactivated = makeRecord({ status: "going" });
-    const repo = makeFakeRepo({
+    const repo = makeFakeRSVPRepo({
       findByUserAndEvent: jest.fn().mockResolvedValue(Ok(existing)),
       countGoingByEvent: jest.fn().mockResolvedValue(Ok(3)), // 3 of 10 taken
       updateStatus: jest.fn().mockResolvedValue(Ok(reactivated)),
     });
-    const svc = CreateRSVPService(repo);
+    const svc = CreateRSVPService(repo, makeFakeEventRepo());
     const result = await svc.toggleRSVP({ userId: "user-1", eventId: "event-1", capacity: 10 });
 
     expect(result.ok).toBe(true);
@@ -222,12 +260,12 @@ describe("RSVPService: reactivating a cancelled RSVP", () => {
   it("reactivates to 'waitlisted' when the event is at capacity", async () => {
     const existing = makeRecord({ status: "cancelled" });
     const reactivated = makeRecord({ status: "waitlisted" });
-    const repo = makeFakeRepo({
+    const repo = makeFakeRSVPRepo({
       findByUserAndEvent: jest.fn().mockResolvedValue(Ok(existing)),
       countGoingByEvent: jest.fn().mockResolvedValue(Ok(10)), // 10 of 10 taken
       updateStatus: jest.fn().mockResolvedValue(Ok(reactivated)),
     });
-    const svc = CreateRSVPService(repo);
+    const svc = CreateRSVPService(repo, makeFakeEventRepo());
     const result = await svc.toggleRSVP({ userId: "user-1", eventId: "event-1", capacity: 10 });
 
     expect(result.ok).toBe(true);
@@ -237,12 +275,12 @@ describe("RSVPService: reactivating a cancelled RSVP", () => {
 
   it("returns an error if updateStatus fails during reactivation", async () => {
     const existing = makeRecord({ status: "cancelled" });
-    const repo = makeFakeRepo({
+    const repo = makeFakeRSVPRepo({
       findByUserAndEvent: jest.fn().mockResolvedValue(Ok(existing)),
       countGoingByEvent: jest.fn().mockResolvedValue(Ok(3)),
       updateStatus: jest.fn().mockResolvedValue(Err(RSVPNotFound("not found"))),
     });
-    const svc = CreateRSVPService(repo);
+    const svc = CreateRSVPService(repo, makeFakeEventRepo());
     const result = await svc.toggleRSVP({ userId: "user-1", eventId: "event-1", capacity: 10 });
 
     expect(result.ok).toBe(false);
@@ -258,12 +296,12 @@ describe("RSVPService: capacity boundary (goingCount vs capacity)", () => {
   // The condition is: goingCount < capacity → "going", otherwise → "waitlisted"
 
   it("goes when goingCount is strictly less than capacity (new RSVP)", async () => {
-    const repo = makeFakeRepo({
+    const repo = makeFakeRSVPRepo({
       findByUserAndEvent: jest.fn().mockResolvedValue(Ok(null)),
       countGoingByEvent: jest.fn().mockResolvedValue(Ok(4)),
       create: jest.fn().mockResolvedValue(Ok(makeRecord({ status: "going" }))),
     });
-    const svc = CreateRSVPService(repo);
+    const svc = CreateRSVPService(repo, makeFakeEventRepo());
     const result = await svc.toggleRSVP({ userId: "user-1", eventId: "event-1", capacity: 5 });
 
     expect(repo.create).toHaveBeenCalledWith("user-1", "event-1", "going");
@@ -271,12 +309,12 @@ describe("RSVPService: capacity boundary (goingCount vs capacity)", () => {
   });
 
   it("waitlists when goingCount equals capacity (new RSVP)", async () => {
-    const repo = makeFakeRepo({
+    const repo = makeFakeRSVPRepo({
       findByUserAndEvent: jest.fn().mockResolvedValue(Ok(null)),
       countGoingByEvent: jest.fn().mockResolvedValue(Ok(5)),
       create: jest.fn().mockResolvedValue(Ok(makeRecord({ status: "waitlisted" }))),
     });
-    const svc = CreateRSVPService(repo);
+    const svc = CreateRSVPService(repo, makeFakeEventRepo());
     const result = await svc.toggleRSVP({ userId: "user-1", eventId: "event-1", capacity: 5 });
 
     expect(repo.create).toHaveBeenCalledWith("user-1", "event-1", "waitlisted");
@@ -284,36 +322,36 @@ describe("RSVPService: capacity boundary (goingCount vs capacity)", () => {
   });
 
   it("waitlists when goingCount exceeds capacity (new RSVP)", async () => {
-    const repo = makeFakeRepo({
+    const repo = makeFakeRSVPRepo({
       findByUserAndEvent: jest.fn().mockResolvedValue(Ok(null)),
       countGoingByEvent: jest.fn().mockResolvedValue(Ok(7)), // somehow over capacity
       create: jest.fn().mockResolvedValue(Ok(makeRecord({ status: "waitlisted" }))),
     });
-    const svc = CreateRSVPService(repo);
+    const svc = CreateRSVPService(repo, makeFakeEventRepo());
     const result = await svc.toggleRSVP({ userId: "user-1", eventId: "event-1", capacity: 5 });
 
     expect(repo.create).toHaveBeenCalledWith("user-1", "event-1", "waitlisted");
   });
 
   it("goes when goingCount is strictly less than capacity (reactivation)", async () => {
-    const repo = makeFakeRepo({
+    const repo = makeFakeRSVPRepo({
       findByUserAndEvent: jest.fn().mockResolvedValue(Ok(makeRecord({ status: "cancelled" }))),
       countGoingByEvent: jest.fn().mockResolvedValue(Ok(4)),
       updateStatus: jest.fn().mockResolvedValue(Ok(makeRecord({ status: "going" }))),
     });
-    const svc = CreateRSVPService(repo);
+    const svc = CreateRSVPService(repo, makeFakeEventRepo());
     const result = await svc.toggleRSVP({ userId: "user-1", eventId: "event-1", capacity: 5 });
 
     expect(repo.updateStatus).toHaveBeenCalledWith("user-1", "event-1", "going");
   });
 
   it("waitlists when goingCount equals capacity (reactivation)", async () => {
-    const repo = makeFakeRepo({
+    const repo = makeFakeRSVPRepo({
       findByUserAndEvent: jest.fn().mockResolvedValue(Ok(makeRecord({ status: "cancelled" }))),
       countGoingByEvent: jest.fn().mockResolvedValue(Ok(5)),
       updateStatus: jest.fn().mockResolvedValue(Ok(makeRecord({ status: "waitlisted" }))),
     });
-    const svc = CreateRSVPService(repo);
+    const svc = CreateRSVPService(repo, makeFakeEventRepo());
     const result = await svc.toggleRSVP({ userId: "user-1", eventId: "event-1", capacity: 5 });
 
     expect(repo.updateStatus).toHaveBeenCalledWith("user-1", "event-1", "waitlisted");
