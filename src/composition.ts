@@ -22,6 +22,10 @@ import { CreateAttendeeService } from "./attendee/AttendeeService";
 import { CreateAttendeeController } from "./attendee/AttendeeController";
 import { CreateOrganizerService } from "./organizerdashboard/OrganizerService";
 import { CreateOrganizerController } from "./organizerdashboard/OrganizerDashboard";
+import { CreateCommentService } from "./comment/CommentService";
+import { CreateCommentController } from "./comment/CommentController";
+import { CreateCommentRepository } from "./comment/CommentRepository";
+import { CreatePrismaCommentRepository } from "./comment/PrismaCommentRepository";
 
 export function createComposedApp(mode: "prisma" | "memory" = "prisma", logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
@@ -33,9 +37,10 @@ export function createComposedApp(mode: "prisma" | "memory" = "prisma", logger?:
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
-  // RSVP and Event repo wiring
+  // RSVP, Event, and Comment repo wiring
   const eventRepository = mode === "prisma" ? CreatePrismaEventRepository(prisma) : CreateInMemoryEventRepository();
   const rsvpRepository = mode === "prisma" ? CreatePrismaRSVPRepository(prisma) : CreateRSVPRepository();
+  const commentRepository = mode === "prisma" ? CreatePrismaCommentRepository(prisma) : CreateCommentRepository();
 
   // Event wiring
   const eventService = CreateEventService(eventRepository);
@@ -57,5 +62,9 @@ export function createComposedApp(mode: "prisma" | "memory" = "prisma", logger?:
   const organizerService = CreateOrganizerService(eventRepository, rsvpRepository);
   const organizerController = CreateOrganizerController(eventService, organizerService, resolvedLogger);
 
-  return CreateApp(eventController, authController, organizerController, resolvedLogger, rsvpController, dashboardController, attendeeController);
+  // Comment wiring
+  const commentService = CreateCommentService(commentRepository, eventRepository, rsvpRepository);
+  const commentController = CreateCommentController(commentService, resolvedLogger);
+
+  return CreateApp(eventController, authController, organizerController, resolvedLogger, rsvpController, dashboardController, attendeeController, commentController);
 }
