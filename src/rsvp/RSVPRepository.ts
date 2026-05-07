@@ -14,27 +14,31 @@ export interface IRSVPRepository {
 
 class RSVPRepository implements IRSVPRepository {
     constructor(private readonly rsvpStore: IRSVPRecord[]) {
-        /* this.rsvpStore.push({
-            userId: "user-reader",
-            eventId: "1",
-            status: "going",
-            id: "1",
-            createdAt: new Date(),
-        });
-        this.rsvpStore.push({
-            userId: "user-reader",
-            eventId: "2",
-            status: "going",
-            id: "2",
-            createdAt: new Date(),
-        });
+        for (let i = 0; i < 10; i++) {
+            this.rsvpStore.push({
+                userId: "user-random",
+                eventId: "1",
+                status: "going",
+                id: (i).toString(),
+                createdAt: new Date(),
+            });
+        }
+        for (let i = 0; i < 29; i++) {
+            this.rsvpStore.push({
+                userId: "user-random",
+                eventId: "2",
+                status: "going",
+                id: (10+i).toString(),
+                createdAt: new Date(),
+            });
+        }
         this.rsvpStore.push({
             userId: "user-staff",
             eventId: "3",
             status: "going",
-            id: "3",
+            id: "",
             createdAt: new Date(),
-        }); */
+        });
     };
 
     async findByEvent(eventId: string): Promise<Result<IRSVPRecord[], RSVPError>> {
