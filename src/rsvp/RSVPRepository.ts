@@ -23,7 +23,7 @@ class RSVPRepository implements IRSVPRepository {
                 createdAt: new Date(),
             });
         }
-        for (let i = 0; i < 29; i++) {
+        for (let i = 0; i < 30; i++) {
             this.rsvpStore.push({
                 userId: "user-random",
                 eventId: "2",
