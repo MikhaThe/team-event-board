@@ -28,6 +28,8 @@
             <% } else { %>
               <a href = "/organizer/dashboard"
               class="text-blue-700 font-semibold no-underline hover:underline">My Events</a>
+              <a href = "/events/new"
+              class="text-blue-700 font-semibold no-underline hover:underline">Create Event</a>
             <% } %>
             <% if (session.authenticatedUser.role === "admin") { %>
               <a href="/admin/users" class="text-blue-700 font-semibold no-underline hover:underline">Manage Users</a>
