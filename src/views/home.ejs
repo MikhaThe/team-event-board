@@ -1,8 +1,7 @@
 <section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
-  <h1 class="text-3xl font-bold text-slate-900 mb-3">Welcome to Town Square!</h1>
+  <h1 class="text-3xl font-bold text-slate-900 mb-3">Welcome to EventJunction!</h1>
   <p class="text-slate-500">
-    You are signed in and ready to begin planning events. This home page is where your
-    project's main content will go.
+    You are signed in and ready to begin planning events. This home page is your first look into .
   </p>
   <% if (session.authenticatedUser) { %>
     <p class="text-slate-500 mt-2 mb-0">
@@ -21,66 +20,34 @@
   <div class="mb-4">
     <h2 class="text-xl font-semibold mb-2">Getting Started</h2>
     <p class="text-slate-500">
-      Town Square is your #1 destination for local event planning. Here are some ideas for where to begin:
+      EventJunction is your #1 destination for local event planning, organization, and coordination. Here are some ideas for where to start:
     </p>
   </div>
 
-  <div class = "min-h-96 justify-center gap-16 flex flex-wrap gap-4">
+  <div class = "min-h-48 justify-center gap-12 flex flex-wrap">
     <article class="bg-white rounded-xl shadow-sm border overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 flex-1">
       <div class="p-5">
-        <h3 class="font-semibold">Check out Local Events</h3>
-        <p class="text-sm text-slate-500 mt-1">Description.</p>
+        <h3 class="font-semibold">Create an Event</h3>
+        <p class="text-sm text-slate-500 mt-1">Organizers can create event pages to spread awareness! You can also check events and update any details that need changing!</p>
         <div class="mt-4 flex gap-2">
-          <button class="...">View</button>
         </div>
       </div>
     </article>
     <article class="bg-white rounded-xl shadow-sm border overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 flex-1">
       <div class="p-5">
-        <h3 class="font-semibold">Mark Your Attendance</h3>
-        <p class="text-sm text-slate-500 mt-1">Description.</p>
+        <h3 class="font-semibold">Check out Local Events</h3>
+        <p class="text-sm text-slate-500 mt-1">Users can check out events happening in their area! You'll be waitlisted if an event has reached capacity. Feel free to cancel your RSVP if plans change!</p>
         <div class="mt-4 flex gap-2">
-          <button class="...">View</button>
         </div>
       </div>
     </article>
     <article class="bg-white rounded-xl shadow-sm border overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 flex-1">
       <div class="p-5">
         <h3 class="font-semibold">Manage Your RSVPs and Events</h3>
-        <p class="text-sm text-slate-500 mt-1">Description.</p>
+        <p class="text-sm text-slate-500 mt-1">Users can look at the events they're attending, while Organizers can manage and publish their events!</p>
         <div class="mt-4 flex gap-2">
-          <button class="...">View</button>
         </div>
       </div>
     </article>
-  </div>
-</section>
-
-<section class="max-w-4xl mt-5 p-6 border border-slate-200 rounded-2xl bg-white shadow-lg" x-data="{ open: false }">
-  <button
-    @click="open = !open"
-    class="w-full flex items-center justify-between text-left bg-transparent border-0 p-0 cursor-pointer"
-  >
-    <h2 class="text-xl font-semibold">Alpine.js Demo</h2>
-    <span class="text-slate-400 text-sm" x-text="open ? 'Hide' : 'Show'">Show</span>
-  </button>
-
-  <div x-show="open" x-transition class="mt-4">
-    <p class="text-slate-500 mb-3">
-      Alpine.js is included via CDN and ready to use. This collapsible section is
-      a quick demonstration. Use <code class="bg-slate-100 px-1 rounded text-sm">x-data</code>,
-      <code class="bg-slate-100 px-1 rounded text-sm">x-show</code>,
-      <code class="bg-slate-100 px-1 rounded text-sm">@click</code>, and other
-      Alpine directives directly in your EJS templates.
-    </p>
-    <div x-data="{ count: 0 }" class="flex items-center gap-3">
-      <button
-        @click="count++"
-        class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium cursor-pointer hover:bg-blue-700 text-sm"
-      >
-        Clicked: <span x-text="count">0</span>
-      </button>
-      <span class="text-sm text-slate-500">A simple Alpine.js counter</span>
-    </div>
   </div>
 </section>
