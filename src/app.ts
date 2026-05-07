@@ -23,7 +23,6 @@ import { IRSVPController } from "./rsvp/RSVPController";
 import type { IEventController as IOrganizerController } from "./organizerdashboard/OrganizerDashboard";
 import type { IDashboardController } from "./dashboard/DashboardController";
 import { IAttendeeController } from "./attendee/AttendeeController";
-import type { ICommentController } from "./comment/CommentController";
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -47,8 +46,7 @@ class ExpressApp implements IApp {
     private readonly logger: ILoggingService,
     private readonly rsvpController: IRSVPController,
     private readonly dashboardController: IDashboardController,
-    private readonly attendeeController: IAttendeeController,
-    private readonly commentController: ICommentController,
+    private readonly attendeeController: IAttendeeController
   ) {
     this.app = express();
     this.registerMiddleware();
@@ -436,24 +434,6 @@ class ExpressApp implements IApp {
       }),
     );
 
-    // ── Comments (optional feature) ──────────────────────────────────
-
-    this.app.get(
-      "/events/:id/comments",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
-        await this.commentController.getComments(req, res);
-      }),
-    );
-
-    this.app.post(
-      "/events/:id/comments",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
-        await this.commentController.postComment(req, res);
-      }),
-    );
-
     // ── Error handler ────────────────────────────────────────────────
 
     this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
@@ -478,8 +458,7 @@ export function CreateApp(
   logger: ILoggingService,
   rsvpController: IRSVPController,
   dashboardController: IDashboardController,
-  attendeeController: IAttendeeController,
-  commentController: ICommentController,
+  attendeeController: IAttendeeController
 ): IApp {
-  return new ExpressApp(eventController, authController, organizerController, logger, rsvpController, dashboardController, attendeeController, commentController);
+  return new ExpressApp(eventController, authController, organizerController, logger, rsvpController, dashboardController, attendeeController);
 }

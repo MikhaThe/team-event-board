@@ -30,20 +30,10 @@ enum RSVPStatus {
 }
 
 model RSVP {
-  userId    String
-  eventId   String
-  status    RSVPStatus?
+  userId    String      
+  eventId   String      
+  status    RSVPStatus?  
   id        String      @id
   createdAt DateTime    @default(now())
-}
-
-model EventComment {
-  id          String   @id @default(uuid())
-  eventId     String
-  userId      String
-  userName    String
-  body        String
-  isOrganizer Boolean  @default(false)
-  createdAt   DateTime @default(now())
 }
 
