@@ -354,10 +354,23 @@ class ExpressApp implements IApp {
         }
 
         const eventId = String(req.params.id);
-        const capacity = Number(req.body.capacity);
         const session = touchAppSession(req.session as AppSessionStore);
 
-        await this.rsvpController.toggleRSVPFromForm(req, res, { eventId, capacity }, session);
+        await this.rsvpController.toggleRSVPFromForm(req, res, eventId, session);
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/rsvp/cancel",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const eventId = String(req.params.id);
+        const session = touchAppSession(req.session as AppSessionStore);
+
+        await this.rsvpController.cancelRSVP(req, res, eventId, session);
       }),
     );
 
@@ -386,7 +399,10 @@ class ExpressApp implements IApp {
         const session = touchAppSession(store);
         const currentUser = getAuthenticatedUser(store);
         const eventId = typeof req.params.id === "string" ? req.params.id : "";
-        await this.organizerController.publishEventFromForm(res, eventId, currentUser!.userId, session);
+        const isHtmx = this.isHtmxRequest(req);
+        const currentUrl = req.get("HX-Current-URL") ?? "";
+        const fromDetail = isHtmx && /\/events\/[^/]+$/.test(currentUrl);
+        await this.organizerController.publishEventFromForm(res, eventId, currentUser!.userId, session, isHtmx, fromDetail);
       }),
     );
 
@@ -399,14 +415,17 @@ class ExpressApp implements IApp {
         const session = touchAppSession(store);
         const currentUser = getAuthenticatedUser(store);
         const eventId = typeof req.params.id === "string" ? req.params.id : "";
-        await this.organizerController.cancelEventFromForm(res, eventId, currentUser!.userId, session);
+        const isHtmx = this.isHtmxRequest(req);
+        const currentUrl = req.get("HX-Current-URL") ?? "";
+        const fromDetail = isHtmx && /\/events\/[^/]+$/.test(currentUrl);
+        await this.organizerController.cancelEventFromForm(res, eventId, currentUser!.userId, session, isHtmx, fromDetail);
       }),
     );
 
     // ── RSVP Dashboard route (Feature 7) ─────────────────────────────
 
     this.app.get(
-      "/dashboard",
+      "/rsvpdashboard",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) {
           return;

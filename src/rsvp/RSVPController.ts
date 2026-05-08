@@ -11,7 +11,13 @@ export interface IRSVPController {
   toggleRSVPFromForm(
     req: Request,
     res: Response,
-    input: { eventId: string; capacity: number },
+    eventId: String,
+    session: IAppBrowserSession,
+  ): Promise<void>;
+  cancelRSVP(
+    req: Request,
+    res: Response,
+    eventId: String,
     session: IAppBrowserSession,
   ): Promise<void>;
 }
@@ -35,7 +41,7 @@ export class RSVPController implements IRSVPController {
   async toggleRSVPFromForm(
     req: Request,
     res: Response,
-    input: { eventId: string; capacity: number },
+    eventId: String,
     session: IAppBrowserSession,
   ): Promise<void> {
     const user = session.authenticatedUser
@@ -48,8 +54,7 @@ export class RSVPController implements IRSVPController {
 
     const result = await this.service.toggleRSVP({
       userId: user.userId,
-      eventId: input.eventId,
-      capacity: input.capacity,
+      eventId: eventId,
     });
 
     if (result.ok === false) {
@@ -61,12 +66,12 @@ export class RSVPController implements IRSVPController {
       res.status(status);
 
       // Assuming event page route pattern
-      res.redirect(`/events/${input.eventId}?error=${encodeURIComponent(error.message)}`);
+      res.redirect(`/events/${eventId}?error=${encodeURIComponent(error.message)}`);
       return;
     }
 
 
-    const rsvp = result.value;
+    const { rsvp, capacity, attendeeCount } = result.value;
 
     this.logger.info(
       `RSVP updated: user=${user.userId} event=${rsvp.eventId} status=${rsvp.status}`,
@@ -75,7 +80,8 @@ export class RSVPController implements IRSVPController {
     if (this.isHtmxRequest(req)) {
       res.status(200).render("partials/rsvpButton", {
         eventId: rsvp.eventId,
-        capacity: input.capacity,
+        capacity: capacity ?? 0,
+        attendeeCount: attendeeCount ?? 0,
         rsvpStatus: rsvp.status,
         error: null,
         layout: false,
@@ -85,6 +91,50 @@ export class RSVPController implements IRSVPController {
     
     // Redirect back to event page (typical UX)
     res.redirect(`/events/${rsvp.eventId}`);
+  }
+
+  async cancelRSVP(
+    req: Request,
+    res: Response,
+    eventId: String,
+    session: IAppBrowserSession,
+  ): Promise<void> {
+    const user = session.authenticatedUser
+
+    if (!user) {
+      this.logger.warn("RSVP attempt without authentication");
+      res.status(403).redirect("/login");
+      return;
+    }
+
+    const result = await this.service.cancelRSVP({
+      userId: user.userId,
+      eventId: eventId,
+    });
+
+    if (result.ok === false) {
+      const error = result.value;
+      const status = this.mapErrorStatus(error);
+      const log = status >= 500 ? this.logger.error : this.logger.warn;
+
+      log.call(this.logger, `RSVP cancel failed: ${error.message}`);
+      res.status(status);
+
+      // Assuming event page route pattern
+      res.redirect(`/events/${eventId}?error=${encodeURIComponent(error.message)}`);
+      return;
+    }
+    const { rsvp, capacity, attendeeCount } = result.value;
+
+    this.logger.info(
+      `RSVP updated: user=${user.userId} event=${rsvp.eventId} status=${rsvp.status}`,
+    );
+
+    res.status(200).send(`
+      <li class="p-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 line-through italic text-sm">
+        RSVP cancelled
+      </li>
+    `);
   }
 }
 

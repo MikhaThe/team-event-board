@@ -81,6 +81,9 @@ class EventController implements IEventController {
       event,
       session: browserSession,
       rsvpStatus,
+      user: user?.role,
+      organizerId: event.organizerId,
+      userId: user?.userId,
     });
   }
 
@@ -88,11 +91,15 @@ class EventController implements IEventController {
     const eventId = req.params.id as string;
     const user = getAuthenticatedUser(req.session);
 
+    
+
     const result = await this.service.getEventDetail(
       eventId,
       user?.userId,
       user?.role,
     );
+
+    
 
     if (!result.ok) {
       const error = result.value as EventDetailError;
@@ -108,6 +115,13 @@ class EventController implements IEventController {
       }
 
       res.status(400).render("partials/error", { message: "Unknown error.", layout: false });
+      return;
+    }
+    
+    const event: Event = result.value;
+    
+    if(!(user?.role === "admin" || (user?.role === "staff" && user?.userId === event.organizerId))){
+      res.status(401).redirect("/events");
       return;
     }
 
