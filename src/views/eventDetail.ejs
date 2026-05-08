@@ -86,16 +86,17 @@
             class="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-colors cursor-pointer">
             Edit
           </button>
+        <% } else { %>
+          <div id="rsvp-container">
+            <%- include('partials/rsvpButton', {
+              eventId: event.id,
+              capacity: event.capacity ?? 0,
+              attendeeCount: event.attendeeCount,
+              rsvpStatus: rsvpStatus,
+              error: null
+            }) %>
+          </div>
         <% } %>
-        <div id="rsvp-container">
-          <%- include('partials/rsvpButton', {
-            eventId: event.id,
-            capacity: event.capacity ?? 0,
-            attendeeCount: event.attendeeCount,
-            rsvpStatus: rsvpStatus,
-            error: null
-          }) %>
-        </div>
       </div>
 
       <!-- Attendee list (organizer/admin only) -->
